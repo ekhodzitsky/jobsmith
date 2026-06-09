@@ -158,7 +158,7 @@ fn build_cv_typst_source(
     template
         .replace("{{NAME}}", &escape_typst(&profile.name))
         .replace("{{CONTACT}}", &escape_typst(&contact))
-        .replace("{{SUMMARY}}", &escape_typst(cv_content))
+        .replace("{{SUMMARY}}", &markdown_to_typst(cv_content))
         .replace("{{EXPERIENCE}}", &experience)
         .replace("{{SKILLS}}", &skills)
         .replace("{{EDUCATION}}", &education)
@@ -183,7 +183,7 @@ fn build_cover_typst_source(
         .replace("{{CANDIDATE_EMAIL}}", &escape_typst(&profile.email))
         .replace("{{COMPANY}}", &escape_typst(vacancy.base.employer_name()))
         .replace("{{ROLE}}", &escape_typst(&vacancy.base.name))
-        .replace("{{CONTENT}}", &escape_typst(cover_content))
+        .replace("{{CONTENT}}", &markdown_to_typst(cover_content))
 }
 
 // ---------------------------------------------------------------------------
@@ -403,6 +403,31 @@ fn escape_typst(text: &str) -> String {
     result
 }
 
+/// Convert Markdown to Typst markup.
+///
+/// Typst and Markdown share `*bold*`, `_italic_`, and `- lists`,
+/// but headings use `# ` in Markdown and `= ` in Typst.
+fn markdown_to_typst(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    for line in text.lines() {
+        let trimmed = line.trim_start();
+        if let Some(rest) = trimmed.strip_prefix("### ") {
+            result.push_str("=== ");
+            result.push_str(rest);
+        } else if let Some(rest) = trimmed.strip_prefix("## ") {
+            result.push_str("== ");
+            result.push_str(rest);
+        } else if let Some(rest) = trimmed.strip_prefix("# ") {
+            result.push_str("= ");
+            result.push_str(rest);
+        } else {
+            result.push_str(line);
+        }
+        result.push('\n');
+    }
+    result
+}
+
 pub fn sanitize_filename(name: &str) -> String {
     name.chars()
         .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
@@ -432,6 +457,13 @@ mod tests {
         let input = "#hello *world* `code` $math$ [block]";
         let expected = r"\#hello \*world\* \`code\` \$math\$ \[block\]";
         assert_eq!(escape_typst(input), expected);
+    }
+
+    #[test]
+    fn markdown_to_typst_converts_headings() {
+        let input = "# Heading 1\n## Heading 2\n### Heading 3\nRegular line with *bold* and _italic_\n- list item";
+        let expected = "= Heading 1\n== Heading 2\n=== Heading 3\nRegular line with *bold* and _italic_\n- list item\n";
+        assert_eq!(markdown_to_typst(input), expected);
     }
 
     #[test]
