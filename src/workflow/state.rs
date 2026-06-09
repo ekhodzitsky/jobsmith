@@ -260,27 +260,13 @@ impl WorkflowEngine {
             stage = match stage {
                 Stage::EvaluateFit { vacancy, profile } => {
                     if force {
-                        Stage::DraftCv {
-                            vacancy,
-                            profile,
-                            evaluation: FitScore::new(100)?,
-                            evaluation_text: "forced: skipping evaluation".to_string(),
-                        }
+                        Stage::EvaluateFit { vacancy, profile }
+                            .into_draft_cv(FitScore::new(100)?, "forced: skipping evaluation".to_string())?
                     } else {
                         let (score, evaluation_text) =
                             kimi_client.evaluate_fit(&profile, &vacancy).await?;
-                        if !score.is_acceptable() {
-                            return Err(JobsmithError::FitScoreTooLow {
-                                score: score.score(),
-                                min: FitScore::MIN_ACCEPTABLE,
-                            });
-                        }
-                        Stage::DraftCv {
-                            vacancy,
-                            profile,
-                            evaluation: score,
-                            evaluation_text,
-                        }
+                        Stage::EvaluateFit { vacancy, profile }
+                            .into_draft_cv(score, evaluation_text)?
                     }
                 }
                 Stage::DraftCv {
@@ -291,13 +277,13 @@ impl WorkflowEngine {
                 } => {
                     let (cv_draft, cover_draft) =
                         kimi_client.draft_cv(&profile, &vacancy, &evaluation_text).await?;
-                    Stage::Review {
+                    Stage::DraftCv {
                         vacancy,
                         profile,
                         evaluation,
-                        cv_draft,
-                        cover_draft,
+                        evaluation_text,
                     }
+                    .into_review(cv_draft, cover_draft)?
                 }
                 Stage::Review {
                     vacancy,
@@ -309,14 +295,14 @@ impl WorkflowEngine {
                     let review = kimi_client
                         .review(&profile, &vacancy, &cv_draft, &cover_draft)
                         .await?;
-                    Stage::Revise {
+                    Stage::Review {
                         vacancy,
                         profile,
                         evaluation,
                         cv_draft,
                         cover_draft,
-                        review,
                     }
+                    .into_revise(review)?
                 }
                 Stage::Revise {
                     vacancy,
@@ -329,13 +315,15 @@ impl WorkflowEngine {
                     let (final_cv, final_cover) = kimi_client
                         .revise(&profile, &cv_draft, &cover_draft, &review)
                         .await?;
-                    Stage::CompilePdf {
+                    Stage::Revise {
                         vacancy,
                         profile,
                         evaluation,
-                        final_cv,
-                        final_cover,
+                        cv_draft,
+                        cover_draft,
+                        review,
                     }
+                    .into_compile_pdf(final_cv, final_cover)?
                 }
                 Stage::CompilePdf { .. } => {
                     info!("workflow reached compile_pdf stage");
