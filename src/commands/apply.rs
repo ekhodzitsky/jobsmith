@@ -6,7 +6,7 @@ use tracing::{info, instrument};
 
 use crate::error::{JobsmithError, Result};
 use crate::hh::client::{extract_vacancy_id, HhClient};
-use crate::profile::store::ProfileStore;
+use crate::profile::store::{ApplicationStatus, ProfileStore};
 use crate::templates;
 use crate::workflow::{KimiClient, WorkflowEngine};
 use crate::workflow::state::Stage;
@@ -15,7 +15,7 @@ use crate::workflow::state::Stage;
 #[instrument(skip(store, vacancy_id))]
 pub async fn run(store: &ProfileStore, vacancy_id: &str, _force: bool) -> Result<()> {
     let profile = store
-        .load_profile()?
+        .load_profile().await?
         .ok_or_else(|| JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string()))?;
 
     let client = HhClient::new()?;
@@ -72,14 +72,14 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, _force: bool) -> Result
                 &id,
                 Some(&vacancy.base.name),
                 Some(&vacancy.base.employer.name),
-            )?;
+            ).await?;
             store.update_application_status(
                 app_id,
-                "draft",
+                ApplicationStatus::Draft,
                 Some(evaluation.0),
                 cv_pdf.to_str(),
                 cover_pdf.to_str(),
-            )?;
+            ).await?;
 
             println!("\n✓ Application recorded (id: {}).", app_id);
             println!("CV: {}", cv_pdf.display());
@@ -96,14 +96,14 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, _force: bool) -> Result
                 &id,
                 Some(&vacancy.base.name),
                 Some(&vacancy.base.employer.name),
-            )?;
+            ).await?;
             store.update_application_status(
                 app_id,
-                "draft",
+                ApplicationStatus::Draft,
                 Some(evaluation.0),
                 Some(&cv_pdf_path),
                 Some(&cover_pdf_path),
-            )?;
+            ).await?;
 
             println!("\n✓ Application recorded (id: {}).", app_id);
             println!("CV: {}", cv_pdf_path);

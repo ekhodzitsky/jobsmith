@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use jobsmith::hh::models::*;
 
 #[test]
@@ -53,8 +53,8 @@ fn vacancies_response_roundtrip() {
                 id: Some("1".to_string()),
                 name: Some("Rust".to_string()),
             }]),
-            published_at: Some(Utc::now()),
-            created_at: Some(Utc::now()),
+            published_at: Some(Utc.with_ymd_and_hms(2024, 1, 15, 10, 30, 0).unwrap()),
+            created_at: Some(Utc.with_ymd_and_hms(2024, 1, 15, 10, 30, 0).unwrap()),
             alternate_url: Some("alt".to_string()),
             apply_alternate_url: Some("apply".to_string()),
             address: Some(Address {
@@ -94,7 +94,7 @@ fn vacancies_response_roundtrip() {
                 id: Some("96".to_string()),
                 name: Some("Developer".to_string()),
             }]),
-            extra: serde_json::Value::Null,
+            extra: serde_json::Value::Object(Default::default()),
         }],
         found: 1,
         pages: 1,
@@ -144,7 +144,7 @@ fn vacancy_roundtrip() {
         working_time_modes: None,
         accept_temporary: None,
         professional_roles: None,
-        extra: serde_json::Value::Null,
+        extra: serde_json::Value::Object(Default::default()),
     };
     let json = serde_json::to_string(&original).unwrap();
     let deserialized: Vacancy = serde_json::from_str(&json).unwrap();
@@ -303,7 +303,7 @@ fn vacancy_detail_roundtrip() {
             working_time_modes: None,
             accept_temporary: None,
             professional_roles: None,
-            extra: serde_json::Value::Null,
+            extra: serde_json::Value::Object(Default::default()),
         },
         contacts: Some(Contacts {
             name: Some("Contact".to_string()),

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use jobsmith::profile::ProfileStore;
+use jobsmith::profile::{ApplicationStatus, ProfileStore};
 
 mod common;
 
@@ -18,11 +18,11 @@ fn temp_db_path() -> PathBuf {
 #[tokio::test]
 async fn profile_save_load_roundtrip() {
     let path = temp_db_path();
-    let store = ProfileStore::open(&path).unwrap();
+    let store = ProfileStore::open(&path).await.unwrap();
     let profile = common::dummy_profile();
 
-    store.save_profile(&profile).unwrap();
-    let loaded = store.load_profile().unwrap();
+    store.save_profile(&profile).await.unwrap();
+    let loaded = store.load_profile().await.unwrap();
 
     assert!(loaded.is_some());
     assert_eq!(loaded.unwrap(), profile);
@@ -63,7 +63,7 @@ fn profile_validation_fails_without_email() {
 #[tokio::test]
 async fn application_record_crud() {
     let path = temp_db_path();
-    let store = ProfileStore::open(&path).unwrap();
+    let store = ProfileStore::open(&path).await.unwrap();
 
     let app_id = store
         .record_application("vac-1", Some("Rust Dev"), Some("Yandex"))
@@ -74,7 +74,7 @@ async fn application_record_crud() {
     store
         .update_application_status(
             app_id,
-            "applied",
+            ApplicationStatus::Applied,
             Some(85),
             Some("/tmp/cv.pdf"),
             Some("/tmp/cover.pdf"),
@@ -82,10 +82,10 @@ async fn application_record_crud() {
         .await
         .unwrap();
 
-    let apps = store.list_applications().unwrap();
+    let apps = store.list_applications().await.unwrap();
     assert_eq!(apps.len(), 1);
     assert_eq!(apps[0].vacancy_id, "vac-1");
-    assert_eq!(apps[0].status, "applied");
+    assert_eq!(apps[0].status, ApplicationStatus::Applied);
     assert_eq!(apps[0].fit_score, Some(85));
     assert_eq!(apps[0].cv_path, Some("/tmp/cv.pdf".to_string()));
     assert_eq!(apps[0].cover_path, Some("/tmp/cover.pdf".to_string()));

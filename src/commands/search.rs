@@ -33,7 +33,7 @@ pub async fn run(
                         )
                     })?
                     .join("jobsmith.db");
-                let store = ProfileStore::open(&db_path)?;
+                let store = ProfileStore::open(&db_path).await?;
                 crate::commands::apply::run(&store, &id, false).await
             }
             tui::Action::Quit => Ok(()),

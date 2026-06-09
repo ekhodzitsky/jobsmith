@@ -9,7 +9,7 @@ use crate::error::{JobsmithError, Result};
 use crate::profile::store::ProfileStore;
 
 /// Run the reset command.
-pub fn run(target: &str, data_dir: &Path) -> Result<()> {
+pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
     let db_path = data_dir.join("jobsmith.db");
 
     match target {
@@ -24,7 +24,7 @@ pub fn run(target: &str, data_dir: &Path) -> Result<()> {
                 return Ok(());
             }
 
-            let store = ProfileStore::open(&db_path)?;
+            let store = ProfileStore::open(&db_path).await?;
             drop(store);
             fs::remove_file(&db_path).map_err(JobsmithError::Io)?;
             info!("profile data reset");
@@ -41,7 +41,7 @@ pub fn run(target: &str, data_dir: &Path) -> Result<()> {
                 return Ok(());
             }
 
-            let store = ProfileStore::open(&db_path)?;
+            let store = ProfileStore::open(&db_path).await?;
             drop(store);
             info!("application data reset");
             println!("✓ Application data reset.");

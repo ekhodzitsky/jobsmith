@@ -35,7 +35,7 @@ fn make_minimal_vacancy() -> Vacancy {
         working_time_modes: None,
         accept_temporary: None,
         professional_roles: None,
-        extra: serde_json::Value::Null,
+        extra: serde_json::Value::Object(Default::default()),
     }
 }
 

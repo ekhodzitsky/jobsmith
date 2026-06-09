@@ -35,7 +35,7 @@ async fn main() {
 
     let result = match cli.command {
         Commands::Setup { section } => {
-            let store = match ProfileStore::open(&db_path) {
+            let store = match ProfileStore::open(&db_path).await {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
@@ -73,7 +73,7 @@ async fn main() {
             search::run(query, interactive, Some(&data_dir)).await
         }
         Commands::Apply { vacancy, force } => {
-            let store = match ProfileStore::open(&db_path) {
+            let store = match ProfileStore::open(&db_path).await {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
@@ -83,16 +83,16 @@ async fn main() {
             apply::run(&store, &vacancy, force).await
         }
         Commands::List { detailed } => {
-            let store = match ProfileStore::open(&db_path) {
+            let store = match ProfileStore::open(&db_path).await {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
                     std::process::exit(1);
                 }
             };
-            list::run(&store, detailed)
+            list::run(&store, detailed).await
         }
-        Commands::Reset { target } => reset::run(&target, &data_dir),
+        Commands::Reset { target } => reset::run(&target, &data_dir).await,
         Commands::Salary {
             company,
             city,

@@ -354,31 +354,14 @@ impl VacancySearchQuery {
 
 /// Strip HTML tags from a string, leaving plain text.
 pub fn strip_html(html: &str) -> String {
-    // Use a simple HTML parser to extract text content.
-    // For production, scraper::html::Html::parse_fragment is more robust.
-    use scraper::{Html, Selector};
+    use scraper::Html;
     let fragment = Html::parse_fragment(html);
 
-    let text = if let Ok(selector) = Selector::parse("body") {
-        fragment
-            .select(&selector)
-            .next()
-            .map(|el| el.text().collect::<Vec<_>>().join(" "))
-    } else if let Ok(selector) = Selector::parse("div") {
-        fragment
-            .select(&selector)
-            .next()
-            .map(|el| el.text().collect::<Vec<_>>().join(" "))
-    } else {
-        None
-    };
-
-    let text = match text {
-        Some(t) => t,
-        None => regex::Regex::new(r"<[^>]+>")
-            .map(|re| re.replace_all(html, " ").to_string())
-            .unwrap_or_else(|_| html.to_string()),
-    };
+    let text = fragment
+        .root_element()
+        .text()
+        .collect::<Vec<_>>()
+        .join(" ");
 
     text.replace(['\n', '\r'], " ")
         .split_whitespace()
@@ -508,7 +491,7 @@ mod tests {
             working_time_modes: None,
             accept_temporary: None,
             professional_roles: None,
-            extra: serde_json::Value::Null,
+            extra: serde_json::Value::Object(Default::default()),
         };
 
         let json = serde_json::to_string(&vacancy).unwrap();
@@ -550,7 +533,7 @@ mod tests {
                 working_time_modes: None,
                 accept_temporary: None,
                 professional_roles: None,
-                extra: serde_json::Value::Null,
+                extra: serde_json::Value::Object(Default::default()),
             },
             contacts: Some(Contacts {
                 name: Some("HR".to_string()),

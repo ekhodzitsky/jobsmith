@@ -244,19 +244,15 @@ impl Drop for TerminalGuard {
 }
 
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>> {
-    enable_raw_mode()
-        .map_err(|e| JobsmithError::Io(io::Error::new(io::ErrorKind::Other, e)))?;
+    enable_raw_mode().map_err(JobsmithError::Io)?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)
-        .map_err(|e| JobsmithError::Io(io::Error::new(io::ErrorKind::Other, e)))?;
+    execute!(stdout, EnterAlternateScreen).map_err(JobsmithError::Io)?;
     let backend = CrosstermBackend::new(stdout);
     Terminal::new(backend).map_err(JobsmithError::Io)
 }
 
 fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
-    disable_raw_mode()
-        .map_err(|e| JobsmithError::Io(io::Error::new(io::ErrorKind::Other, e)))?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)
-        .map_err(|e| JobsmithError::Io(io::Error::new(io::ErrorKind::Other, e)))?;
+    disable_raw_mode().map_err(JobsmithError::Io)?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen).map_err(JobsmithError::Io)?;
     terminal.show_cursor().map_err(JobsmithError::Io)
 }

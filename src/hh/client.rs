@@ -12,7 +12,14 @@ use crate::hh::models::{SalaryStatisticsResponse, VacanciesResponse, VacancyDeta
 const HH_API_BASE: &str = "https://api.hh.ru";
 
 /// User-Agent required by HH API terms of service.
-const HH_USER_AGENT: &str = "jobsmith/0.1.0 (ekhodzitsky@example.com)";
+const HH_USER_AGENT: &str = concat!(
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("CARGO_PKG_REPOSITORY"),
+    ")"
+);
 
 /// Default timeout for HH API requests.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);

@@ -6,6 +6,18 @@
 use crate::hh::models::VacancyDetail;
 use crate::profile::model::Profile;
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const FIT_EVAL_DESCRIPTION_LIMIT: usize = 3000;
+const PROMPT_DESCRIPTION_LIMIT: usize = 2000;
+const COVER_DRAFT_DESCRIPTION_LIMIT: usize = 1500;
+const COMPACT_PROFILE_SUMMARY_LIMIT: usize = 500;
+const RECENT_EXPERIENCE_COUNT: usize = 2;
+const TOP_SKILLS_COUNT: usize = 10;
+const TRUNCATE_SUFFIX_MARGIN: usize = 15;
+
 /// Build the fit evaluation prompt.
 ///
 /// Asks Kimi to evaluate how well the candidate fits the vacancy.
@@ -133,7 +145,7 @@ STRENGTHS: <что выделяет кандидата>
             .as_ref()
             .map(|a| a.name.clone())
             .unwrap_or_else(|| "не указан".to_string()),
-        description = truncate(&vacancy_desc, 3000),
+        description = truncate(&vacancy_desc, FIT_EVAL_DESCRIPTION_LIMIT),
         skills = skills,
     )
 }
@@ -195,7 +207,7 @@ pub fn build_cv_draft_prompt(
                 .as_deref()
                 .map(crate::hh::models::strip_html)
                 .unwrap_or_default(),
-            2000
+            PROMPT_DESCRIPTION_LIMIT
         ),
     )
 }
@@ -252,7 +264,7 @@ pub fn build_cover_draft_prompt(
                 .as_deref()
                 .map(crate::hh::models::strip_html)
                 .unwrap_or_default(),
-            1500
+            COVER_DRAFT_DESCRIPTION_LIMIT
         ),
         cv_draft = cv_draft,
     )
@@ -323,7 +335,7 @@ ACTION_ITEMS:
                 .as_deref()
                 .map(crate::hh::models::strip_html)
                 .unwrap_or_default(),
-            2000
+            PROMPT_DESCRIPTION_LIMIT
         ),
         cv_draft = cv_draft,
         cover_draft = cover_draft,
@@ -412,7 +424,7 @@ pub fn build_interview_prep_prompt(profile: &Profile, vacancy: &VacancyDetail) -
                 .as_deref()
                 .map(crate::hh::models::strip_html)
                 .unwrap_or_default(),
-            2000
+            PROMPT_DESCRIPTION_LIMIT
         ),
     )
 }
@@ -485,7 +497,7 @@ fn build_compact_profile_summary(profile: &Profile) -> String {
         .experience
         .iter()
         .rev()
-        .take(2)
+        .take(RECENT_EXPERIENCE_COUNT)
         .map(|e| {
             let end = e
                 .end_date
@@ -499,7 +511,7 @@ fn build_compact_profile_summary(profile: &Profile) -> String {
     let top_skills = profile
         .skills
         .iter()
-        .take(10)
+        .take(TOP_SKILLS_COUNT)
         .cloned()
         .collect::<Vec<_>>()
         .join(", ");
@@ -545,7 +557,7 @@ fn build_compact_profile_summary(profile: &Profile) -> String {
         target_salary,
     );
 
-    truncate(&summary, 500)
+    truncate(&summary, COMPACT_PROFILE_SUMMARY_LIMIT)
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -553,7 +565,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
     if char_count <= max_chars {
         s.to_string()
     } else {
-        let truncated: String = s.chars().take(max_chars.saturating_sub(15)).collect();
+        let truncated: String = s.chars().take(max_chars.saturating_sub(TRUNCATE_SUFFIX_MARGIN)).collect();
         format!("{truncated}... [truncated]")
     }
 }

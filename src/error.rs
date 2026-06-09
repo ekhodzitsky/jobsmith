@@ -7,6 +7,7 @@ use std::io;
 
 /// The top-level error type for jobsmith.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum JobsmithError {
     /// HTTP request to HeadHunter API failed.
     #[error("hh api request failed: {0}")]
@@ -67,6 +68,10 @@ pub enum JobsmithError {
     /// Invalid vacancy ID provided.
     #[error("invalid vacancy id: {0}")]
     InvalidVacancyId(String),
+
+    /// Invalid application status string.
+    #[error("invalid application status: {0}")]
+    InvalidApplicationStatus(String),
 
     /// User cancelled the operation.
     #[error("operation cancelled by user")]

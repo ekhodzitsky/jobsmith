@@ -144,7 +144,7 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
     };
 
     profile.validate()?;
-    store.save_profile(&profile)?;
+    store.save_profile(&profile).await?;
 
     println!("\n✓ Profile saved successfully.");
     Ok(())

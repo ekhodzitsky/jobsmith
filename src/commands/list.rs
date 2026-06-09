@@ -4,8 +4,8 @@ use crate::error::Result;
 use crate::profile::store::ProfileStore;
 
 /// Run the list command.
-pub fn run(store: &ProfileStore, detailed: bool) -> Result<()> {
-    let apps = store.list_applications()?;
+pub async fn run(store: &ProfileStore, detailed: bool) -> Result<()> {
+    let apps = store.list_applications().await?;
 
     if apps.is_empty() {
         println!("No applications tracked yet.");

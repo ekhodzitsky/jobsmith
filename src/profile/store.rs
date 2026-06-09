@@ -1,5 +1,6 @@
 //! SQLite-backed profile storage.
 
+use std::fmt;
 use std::path::Path;
 
 use rusqlite::{params, Connection, OptionalExtension};
@@ -9,6 +10,51 @@ use tracing::{debug, info, instrument};
 
 use crate::error::{JobsmithError, Result};
 use crate::profile::model::Profile;
+
+/// The status of a job application.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ApplicationStatus {
+    /// Application is being drafted.
+    Draft,
+    /// Application has been submitted.
+    Applied,
+}
+
+impl fmt::Display for ApplicationStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ApplicationStatus::Draft => write!(f, "draft"),
+            ApplicationStatus::Applied => write!(f, "applied"),
+        }
+    }
+}
+
+impl std::str::FromStr for ApplicationStatus {
+    type Err = JobsmithError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "draft" => Ok(Self::Draft),
+            "applied" => Ok(Self::Applied),
+            _ => Err(JobsmithError::InvalidApplicationStatus(s.to_string())),
+        }
+    }
+}
+
+impl rusqlite::types::ToSql for ApplicationStatus {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        Ok(rusqlite::types::ToSqlOutput::from(self.to_string()))
+    }
+}
+
+impl rusqlite::types::FromSql for ApplicationStatus {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        value.as_str().and_then(|s| {
+            s.parse::<Self>()
+                .map_err(|e| rusqlite::types::FromSqlError::Other(Box::new(e)))
+        })
+    }
+}
 
 /// Manages the SQLite database for profiles and application history.
 #[derive(Debug)]
@@ -152,7 +198,7 @@ impl ProfileStore {
     pub async fn update_application_status(
         &self,
         application_id: i64,
-        status: &str,
+        status: ApplicationStatus,
         fit_score: Option<i32>,
         cv_path: Option<&str>,
         cover_path: Option<&str>,
@@ -219,7 +265,7 @@ pub struct ApplicationRecord {
     pub vacancy_id: String,
     pub vacancy_name: Option<String>,
     pub employer_name: Option<String>,
-    pub status: String,
+    pub status: ApplicationStatus,
     pub fit_score: Option<i32>,
     pub cv_path: Option<String>,
     pub cover_path: Option<String>,
