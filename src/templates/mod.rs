@@ -86,7 +86,7 @@ pub async fn generate_cv_typst(
     );
     let output_path = output_dir.join(&file_name);
 
-    let template = load_template(CV_TEMPLATE_PATH, CV_TEMPLATE_EMBEDDED).await;
+    let template = load_template(CV_TEMPLATE_PATH, CV_TEMPLATE_EMBEDDED).await?;
     let source = build_cv_typst_source(profile, vacancy, cv_content, &template);
 
     tokio::fs::write(&output_path, source)
@@ -112,7 +112,7 @@ pub async fn generate_cover_typst(
     );
     let output_path = output_dir.join(&file_name);
 
-    let template = load_template(COVER_TEMPLATE_PATH, COVER_TEMPLATE_EMBEDDED).await;
+    let template = load_template(COVER_TEMPLATE_PATH, COVER_TEMPLATE_EMBEDDED).await?;
     let source = build_cover_typst_source(profile, vacancy, cover_content, &template);
 
     tokio::fs::write(&output_path, source)
@@ -127,12 +127,12 @@ pub async fn generate_cover_typst(
 // Template loading
 // ---------------------------------------------------------------------------
 
-async fn load_template(path: &str, fallback: &str) -> String {
+async fn load_template(path: &str, fallback: &str) -> Result<String> {
     match tokio::fs::read_to_string(path).await {
-        Ok(content) => content,
+        Ok(content) => Ok(content),
         Err(e) => {
             warn!(path = path, error = %e, "template file not found, using embedded fallback");
-            fallback.to_string()
+            Ok(fallback.to_string())
         }
     }
 }
