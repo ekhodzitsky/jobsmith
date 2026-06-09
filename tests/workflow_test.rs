@@ -103,3 +103,16 @@ fn fit_score_is_acceptable() {
     assert!(!FitScore(59).is_acceptable());
     assert!(!FitScore(0).is_acceptable());
 }
+
+#[test]
+fn unacceptable_fit_score_blocks_transition() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+
+    let stage = Stage::EvaluateFit { vacancy, profile };
+    let err = stage
+        .into_draft_cv(FitScore(59), "poor fit".to_string())
+        .unwrap_err();
+
+    assert!(matches!(err, JobsmithError::FitScoreTooLow { .. }));
+}

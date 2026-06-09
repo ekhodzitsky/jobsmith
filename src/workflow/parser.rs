@@ -30,16 +30,19 @@ const REASONING_TERMINATORS: &[&str] = &[
     "---COVER---",
 ];
 
-static SCORE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?im)^SCORE:\s*(\d+)").unwrap()
+static SCORE_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
+    Regex::new(r"(?im)^SCORE:\s*(\d+)")
+        .map_err(|e| format!("invalid regex: {e}"))
 });
 
-static VERDICT_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?im)^VERDICT:\s*(accept|reject|marginal)").unwrap()
+static VERDICT_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
+    Regex::new(r"(?im)^VERDICT:\s*(accept|reject|marginal)")
+        .map_err(|e| format!("invalid regex: {e}"))
 });
 
-static REASONING_START_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?im)^REASONING:\s*").unwrap()
+static REASONING_START_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
+    Regex::new(r"(?im)^REASONING:\s*")
+        .map_err(|e| format!("invalid regex: {e}"))
 });
 
 /// Parse a fit evaluation response.
@@ -47,7 +50,10 @@ static REASONING_START_RE: LazyLock<Regex> = LazyLock::new(|| {
 /// Looks for `SCORE: <n>`, `VERDICT: <accept|reject|marginal>`, and
 /// `REASONING: <text>` in the markdown.
 pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
-    let score: i32 = SCORE_RE
+    let score_re = SCORE_RE
+        .as_ref()
+        .map_err(|e| JobsmithError::Process(e.clone()))?;
+    let score: i32 = score_re
         .captures(text)
         .and_then(|c| c.get(1))
         .and_then(|m| m.as_str().parse().ok())
@@ -59,13 +65,16 @@ pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
         )));
     }
 
-    let verdict = VERDICT_RE
+    let verdict_re = VERDICT_RE
+        .as_ref()
+        .map_err(|e| JobsmithError::Process(e.clone()))?;
+    let verdict = verdict_re
         .captures(text)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_lowercase())
         .ok_or_else(|| JobsmithError::Process("failed to parse VERDICT from response".to_string()))?;
 
-    let reasoning = extract_reasoning(text);
+    let reasoning = extract_reasoning(text)?;
 
     Ok(Evaluation {
         score,
@@ -74,9 +83,12 @@ pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
     })
 }
 
-fn extract_reasoning(text: &str) -> String {
-    let Some(m) = REASONING_START_RE.find(text) else {
-        return String::new();
+fn extract_reasoning(text: &str) -> Result<String> {
+    let re = REASONING_START_RE
+        .as_ref()
+        .map_err(|e| JobsmithError::Process(e.clone()))?;
+    let Some(m) = re.find(text) else {
+        return Ok(String::new());
     };
     let rest = &text[m.end()..];
     let rest_upper = rest.to_uppercase();
@@ -85,7 +97,7 @@ fn extract_reasoning(text: &str) -> String {
         .filter_map(|h| rest_upper.find(&h.to_uppercase()))
         .min()
         .unwrap_or(rest.len());
-    rest[..end].trim().to_string()
+    Ok(rest[..end].trim().to_string())
 }
 
 /// Parse a revision response into CV and cover letter.

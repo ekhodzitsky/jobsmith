@@ -97,12 +97,20 @@ impl Stage {
         evaluation_text: String,
     ) -> Result<Self> {
         match self {
-            Stage::EvaluateFit { vacancy, profile } => Ok(Stage::DraftCv {
-                vacancy,
-                profile,
-                evaluation,
-                evaluation_text,
-            }),
+            Stage::EvaluateFit { vacancy, profile } => {
+                if !evaluation.is_acceptable() {
+                    return Err(JobsmithError::FitScoreTooLow {
+                        score: evaluation.0,
+                        min: FitScore::MIN_ACCEPTABLE,
+                    });
+                }
+                Ok(Stage::DraftCv {
+                    vacancy,
+                    profile,
+                    evaluation,
+                    evaluation_text,
+                })
+            }
             other => Err(JobsmithError::InvalidWorkflowState {
                 expected: "evaluate_fit".to_string(),
                 actual: other.name().to_string(),
@@ -236,6 +244,12 @@ impl WorkflowEngine {
                 Stage::EvaluateFit { vacancy, profile } => {
                     let (score, evaluation_text) =
                         kimi_client.evaluate_fit(&profile, &vacancy).await?;
+                    if !score.is_acceptable() {
+                        return Err(JobsmithError::FitScoreTooLow {
+                            score: score.0,
+                            min: FitScore::MIN_ACCEPTABLE,
+                        });
+                    }
                     Stage::DraftCv {
                         vacancy,
                         profile,

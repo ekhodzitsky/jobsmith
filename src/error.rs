@@ -73,6 +73,10 @@ pub enum JobsmithError {
     #[error("invalid application status: {0}")]
     InvalidApplicationStatus(String),
 
+    /// Fit score is below the minimum acceptable threshold.
+    #[error("fit score {score} is below the minimum acceptable threshold of {min}")]
+    FitScoreTooLow { score: i32, min: i32 },
+
     /// User cancelled the operation.
     #[error("operation cancelled by user")]
     Cancelled,

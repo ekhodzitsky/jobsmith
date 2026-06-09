@@ -7,9 +7,9 @@ use std::time::Duration;
 use kimi_wire::client::WireClient;
 use kimi_wire::client_ext::RequestExt;
 use kimi_wire::message::{parse_wire_message, WireMessage};
-use kimi_wire::protocol::{ContentPart, Event, PromptResult, TextPart};
+use kimi_wire::protocol::{ContentPart, Event, PromptResult, TextPart, ThinkPart};
 use kimi_wire::transport::{ChildProcessTransport, TransportWireClient};
-use tracing::{info, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 
 use crate::error::{JobsmithError, Result};
 use crate::hh::models::VacancyDetail;
@@ -97,10 +97,18 @@ impl KimiClient {
 
             match msg {
                 WireMessage::Event(notification) => {
-                    if let Event::ContentPart(ContentPart::Text(TextPart { text })) =
-                        notification.params
-                    {
-                        output.push_str(&text);
+                    if let Event::ContentPart(part) = notification.params {
+                        match part {
+                            ContentPart::Text(TextPart { text }) => {
+                                output.push_str(&text);
+                            }
+                            ContentPart::Think(ThinkPart { think, .. }) => {
+                                debug!(think = %think, "received thinking content");
+                            }
+                            other => {
+                                debug!(content_part = ?other, "received non-text content part");
+                            }
+                        }
                     }
                 }
                 WireMessage::Request(req) => {
