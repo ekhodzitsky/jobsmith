@@ -19,6 +19,7 @@ use crate::workflow::prompts;
 use crate::workflow::state::FitScore;
 
 const DEFAULT_PROMPT_TIMEOUT: Duration = Duration::from_secs(300);
+const MAX_OUTPUT_BYTES: usize = 10 * 1024 * 1024; // 10 MiB
 
 /// Result of a single prompt turn.
 #[derive(Debug, Clone)]
@@ -101,9 +102,14 @@ impl KimiClient {
                         match part {
                             ContentPart::Text(TextPart { text }) => {
                                 output.push_str(&text);
+                                if output.len() > MAX_OUTPUT_BYTES {
+                                    return Err(JobsmithError::Process(
+                                        "kimi output exceeded 10 MiB limit".to_string(),
+                                    ));
+                                }
                             }
                             ContentPart::Think(ThinkPart { think, .. }) => {
-                                debug!(think = %think, "received thinking content");
+                                debug!(think_len = think.len(), "received thinking content");
                             }
                             other => {
                                 debug!(content_part = ?other, "received non-text content part");
@@ -152,7 +158,7 @@ impl KimiClient {
         let prompt = prompts::build_fit_evaluation_prompt(profile, vacancy);
         let result = self.prompt_and_collect(prompt).await?;
         let evaluation = parser::parse_evaluation(&result.turn_output)?;
-        Ok((FitScore(evaluation.score), result.turn_output))
+        Ok((FitScore::new(evaluation.score)?, result.turn_output))
     }
 
     /// Draft CV and cover letter.

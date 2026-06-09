@@ -11,11 +11,27 @@ use crate::profile::model::Profile;
 
 /// A fit evaluation score (0-100).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct FitScore(pub i32);
+pub struct FitScore(i32);
 
 impl FitScore {
     /// Minimum score to proceed with application.
     pub const MIN_ACCEPTABLE: i32 = 60;
+
+    /// Create a new fit score, validating the range 0-100.
+    pub fn new(score: i32) -> Result<Self> {
+        if (0..=100).contains(&score) {
+            Ok(Self(score))
+        } else {
+            Err(JobsmithError::Process(format!(
+                "fit score must be between 0 and 100, got {score}"
+            )))
+        }
+    }
+
+    /// Return the raw score value.
+    pub fn score(&self) -> i32 {
+        self.0
+    }
 
     /// Check if the score is acceptable.
     pub fn is_acceptable(&self) -> bool {
@@ -100,7 +116,7 @@ impl Stage {
             Stage::EvaluateFit { vacancy, profile } => {
                 if !evaluation.is_acceptable() {
                     return Err(JobsmithError::FitScoreTooLow {
-                        score: evaluation.0,
+                        score: evaluation.score(),
                         min: FitScore::MIN_ACCEPTABLE,
                     });
                 }
@@ -247,7 +263,7 @@ impl WorkflowEngine {
                         Stage::DraftCv {
                             vacancy,
                             profile,
-                            evaluation: FitScore(100),
+                            evaluation: FitScore::new(100)?,
                             evaluation_text: "forced: skipping evaluation".to_string(),
                         }
                     } else {
@@ -255,7 +271,7 @@ impl WorkflowEngine {
                             kimi_client.evaluate_fit(&profile, &vacancy).await?;
                         if !score.is_acceptable() {
                             return Err(JobsmithError::FitScoreTooLow {
-                                score: score.0,
+                                score: score.score(),
                                 min: FitScore::MIN_ACCEPTABLE,
                             });
                         }

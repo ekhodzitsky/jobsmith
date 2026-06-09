@@ -15,7 +15,7 @@ fn stage_names() {
     assert_eq!(stage.name(), "evaluate_fit");
 
     let stage = stage
-        .into_draft_cv(FitScore(75), "good fit".to_string())
+        .into_draft_cv(FitScore::new(75).unwrap(), "good fit".to_string())
         .unwrap();
     assert_eq!(stage.name(), "draft_cv");
 
@@ -47,7 +47,7 @@ fn valid_transitions() {
     assert_eq!(stage.name(), "evaluate_fit");
 
     let stage = stage
-        .into_draft_cv(FitScore(75), "good fit".to_string())
+        .into_draft_cv(FitScore::new(75).unwrap(), "good fit".to_string())
         .unwrap();
     let stage = stage
         .into_review("cv".to_string(), "cover".to_string())
@@ -86,7 +86,7 @@ fn invalid_transition_draft_cv_to_revise() {
     let stage = Stage::DraftCv {
         vacancy,
         profile,
-        evaluation: FitScore(75),
+        evaluation: FitScore::new(75).unwrap(),
         evaluation_text: "ok".to_string(),
     };
     let err = stage.into_revise("rev".to_string()).unwrap_err();
@@ -97,11 +97,11 @@ fn invalid_transition_draft_cv_to_revise() {
 
 #[test]
 fn fit_score_is_acceptable() {
-    assert!(FitScore(60).is_acceptable());
-    assert!(FitScore(61).is_acceptable());
-    assert!(FitScore(100).is_acceptable());
-    assert!(!FitScore(59).is_acceptable());
-    assert!(!FitScore(0).is_acceptable());
+    assert!(FitScore::new(60).unwrap().is_acceptable());
+    assert!(FitScore::new(61).unwrap().is_acceptable());
+    assert!(FitScore::new(100).unwrap().is_acceptable());
+    assert!(!FitScore::new(59).unwrap().is_acceptable());
+    assert!(!FitScore::new(0).unwrap().is_acceptable());
 }
 
 #[test]
@@ -111,7 +111,7 @@ fn unacceptable_fit_score_blocks_transition() {
 
     let stage = Stage::EvaluateFit { vacancy, profile };
     let err = stage
-        .into_draft_cv(FitScore(59), "poor fit".to_string())
+        .into_draft_cv(FitScore::new(59).unwrap(), "poor fit".to_string())
         .unwrap_err();
 
     assert!(matches!(err, JobsmithError::FitScoreTooLow { .. }));

@@ -393,7 +393,7 @@ fn escape_typst(text: &str) -> String {
         match c {
             '\\' => result.push_str("\\\\"),
             '#' | '*' | '_' | '`' | '$' | '@' | '~' | '^' | '&' | '<' | '>' | '"' | '['
-            | ']' => {
+            | ']' | '{' | '}' => {
                 result.push('\\');
                 result.push(c);
             }

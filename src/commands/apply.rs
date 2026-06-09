@@ -63,7 +63,8 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
 
                 let employer_safe = templates::sanitize_filename(&vacancy.base.employer.name);
                 let role_safe = templates::sanitize_filename(&vacancy.base.name);
-                let cv_pdf = output_dir.join(format!("cv_{}.pdf", employer_safe));
+                let id_safe = templates::sanitize_filename(&id);
+                let cv_pdf = output_dir.join(format!("cv_{}_{}.pdf", employer_safe, id_safe));
                 let cover_pdf = output_dir.join(format!("cover_{}_{}.pdf", employer_safe, role_safe));
 
                 templates::compile_typst(&cv_typst, &cv_pdf).await?;
@@ -77,7 +78,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 store.update_application_status(
                     app_id,
                     ApplicationStatus::Draft,
-                    Some(evaluation.0),
+                    Some(evaluation.score()),
                     cv_pdf.to_str(),
                     cover_pdf.to_str(),
                 ).await?;
@@ -101,7 +102,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 store.update_application_status(
                     app_id,
                     ApplicationStatus::Draft,
-                    Some(evaluation.0),
+                    Some(evaluation.score()),
                     Some(&cv_pdf_path),
                     Some(&cover_pdf_path),
                 ).await?;
@@ -122,7 +123,9 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
         Ok::<(), JobsmithError>(())
     }.await;
 
-    kimi_client.shutdown().await?;
+    if let Err(e) = kimi_client.shutdown().await {
+        tracing::warn!(error = %e, "kimi shutdown failed");
+    }
     workflow_result
 }
 
