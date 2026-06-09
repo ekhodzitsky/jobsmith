@@ -8,6 +8,21 @@ use tracing::{instrument, trace};
 use crate::error::{JobsmithError, Result};
 use crate::hh::models::{SalaryStatisticsResponse, VacanciesResponse, VacancyDetail, VacancySearchQuery};
 
+/// Compute a delay with jitter for retry backoff.
+///
+/// Uses the current system time nanoseconds as a lightweight entropy source
+/// to avoid a `rand` dependency while still preventing thundering-herd
+/// synchronization across independent processes.
+fn backoff_with_jitter(attempt: u32) -> Duration {
+    let base_secs = 2u64.saturating_pow(attempt.saturating_sub(1));
+    let base = Duration::from_secs(base_secs);
+    let jitter_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos() as u64 % 500;
+    base + Duration::from_millis(jitter_ms)
+}
+
 /// Base URL for the HeadHunter API.
 const HH_API_BASE: &str = "https://api.hh.ru";
 
@@ -65,8 +80,8 @@ impl HhClient {
 
     /// Send a request with exponential backoff retry.
     ///
-    /// Retries on network errors (`reqwest::Error`), HTTP 429, and HTTP 503.
-    /// Backoff: 1s → 2s → 4s for up to 3 retries.
+    /// Retries on network errors (`reqwest::Error`), HTTP 429, 500, and 503.
+    /// Backoff: ~1s → ~2s → ~4s for up to 3 retries (with up to 500 ms jitter).
     async fn send_with_retry(
         &self,
         method: reqwest::Method,
@@ -77,8 +92,7 @@ impl HhClient {
 
         for attempt in 0..=HH_API_MAX_RETRIES {
             if attempt > 0 {
-                let delay = Duration::from_secs(2u64.pow(attempt - 1));
-                tokio::time::sleep(delay).await;
+                tokio::time::sleep(backoff_with_jitter(attempt)).await;
             }
 
             let mut request = self.client.request(method.clone(), url);
@@ -93,6 +107,7 @@ impl HhClient {
                         return Ok(response);
                     }
                     if status == StatusCode::TOO_MANY_REQUESTS
+                        || status == StatusCode::INTERNAL_SERVER_ERROR
                         || status == StatusCode::SERVICE_UNAVAILABLE
                     {
                         last_error = Some(JobsmithError::HhApiStatus {

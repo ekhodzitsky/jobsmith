@@ -1,6 +1,7 @@
 //! Jobsmith — AI-powered job application assistant for HeadHunter (Russia).
 
 use std::path::PathBuf;
+use std::process::ExitCode;
 use std::sync::OnceLock;
 
 use clap::Parser;
@@ -8,11 +9,25 @@ use tracing::{error, info};
 
 use jobsmith::cli::{Cli, Commands};
 use jobsmith::commands::{apply, list, reset, salary_cmd, search, setup};
+use jobsmith::error::JobsmithError;
 use jobsmith::hh::models::VacancySearchQuery;
 use jobsmith::profile::store::ProfileStore;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
+    match run().await {
+        Ok(()) => {
+            info!("jobsmith finished successfully");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            error!(error = %e, "command failed");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+async fn run() -> Result<(), JobsmithError> {
     let cli = Cli::parse();
 
     init_tracing(cli.verbose);
@@ -28,18 +43,18 @@ async fn main() {
     // Ensure data directory exists
     if let Err(e) = std::fs::create_dir_all(&data_dir) {
         error!(error = %e, "failed to create data directory");
-        std::process::exit(1);
+        return Err(JobsmithError::Io(e));
     }
 
     let db_path = data_dir.join("jobsmith.db");
 
-    let result = match cli.command {
+    match cli.command {
         Commands::Setup { section } => {
             let store = match ProfileStore::open(&db_path).await {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
-                    std::process::exit(1);
+                    return Err(e);
                 }
             };
             setup::run(&store, section.as_deref()).await
@@ -77,7 +92,7 @@ async fn main() {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
-                    std::process::exit(1);
+                    return Err(e);
                 }
             };
             apply::run(&store, &vacancy, force).await
@@ -87,7 +102,7 @@ async fn main() {
                 Ok(s) => s,
                 Err(e) => {
                     error!(error = %e, "failed to open profile database");
-                    std::process::exit(1);
+                    return Err(e);
                 }
             };
             list::run(&store, detailed).await
@@ -98,14 +113,7 @@ async fn main() {
             city,
             json,
         } => salary_cmd::run(&company, city.as_deref(), json, &data_dir),
-    };
-
-    if let Err(e) = result {
-        error!(error = %e, "command failed");
-        std::process::exit(1);
     }
-
-    info!("jobsmith finished successfully");
 }
 
 fn init_tracing(verbose: u8) {
