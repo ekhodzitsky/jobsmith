@@ -13,7 +13,7 @@ use crate::workflow::state::Stage;
 
 /// Run the apply command.
 #[instrument(skip(store, vacancy_id))]
-pub async fn run(store: &ProfileStore, vacancy_id: &str, _force: bool) -> Result<()> {
+pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<()> {
     let profile = store
         .load_profile().await?
         .ok_or_else(|| JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string()))?;
@@ -32,95 +32,98 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, _force: bool) -> Result
     let stage = engine.start(vacancy.clone(), profile.clone());
 
     println!("Running application workflow...\n");
-    let final_stage = engine.run(stage, &mut kimi_client).await?;
+    let final_stage = engine.run(stage, &mut kimi_client, force).await?;
 
     let output_dir = get_data_dir()?.join("output");
-    templates::ensure_output_dir(&get_data_dir()?).await?;
+    templates::ensure_output_dir(&output_dir).await?;
 
-    match final_stage {
-        Stage::CompilePdf {
-            vacancy,
-            profile,
-            evaluation,
-            final_cv,
-            final_cover,
-        } => {
-            let cv_typst = templates::generate_cv_typst(
-                &profile,
-                &vacancy,
-                &final_cv,
-                &output_dir,
-            )
-            .await?;
-            let cover_typst = templates::generate_cover_typst(
-                &profile,
-                &vacancy,
-                &final_cover,
-                &output_dir,
-            )
-            .await?;
+    let workflow_result = async {
+        match final_stage {
+            Stage::CompilePdf {
+                vacancy,
+                profile,
+                evaluation,
+                final_cv,
+                final_cover,
+            } => {
+                let cv_typst = templates::generate_cv_typst(
+                    &profile,
+                    &vacancy,
+                    &final_cv,
+                    &output_dir,
+                )
+                .await?;
+                let cover_typst = templates::generate_cover_typst(
+                    &profile,
+                    &vacancy,
+                    &final_cover,
+                    &output_dir,
+                )
+                .await?;
 
-            let employer_safe = templates::sanitize_filename(&vacancy.base.employer.name);
-            let role_safe = templates::sanitize_filename(&vacancy.base.name);
-            let cv_pdf = output_dir.join(format!("cv_{}.pdf", employer_safe));
-            let cover_pdf = output_dir.join(format!("cover_{}_{}.pdf", employer_safe, role_safe));
+                let employer_safe = templates::sanitize_filename(&vacancy.base.employer.name);
+                let role_safe = templates::sanitize_filename(&vacancy.base.name);
+                let cv_pdf = output_dir.join(format!("cv_{}.pdf", employer_safe));
+                let cover_pdf = output_dir.join(format!("cover_{}_{}.pdf", employer_safe, role_safe));
 
-            templates::compile_typst(&cv_typst, &cv_pdf).await?;
-            templates::compile_typst(&cover_typst, &cover_pdf).await?;
+                templates::compile_typst(&cv_typst, &cv_pdf).await?;
+                templates::compile_typst(&cover_typst, &cover_pdf).await?;
 
-            let app_id = store.record_application(
-                &id,
-                Some(&vacancy.base.name),
-                Some(&vacancy.base.employer.name),
-            ).await?;
-            store.update_application_status(
-                app_id,
-                ApplicationStatus::Draft,
-                Some(evaluation.0),
-                cv_pdf.to_str(),
-                cover_pdf.to_str(),
-            ).await?;
+                let app_id = store.record_application(
+                    &id,
+                    Some(&vacancy.base.name),
+                    Some(&vacancy.base.employer.name),
+                ).await?;
+                store.update_application_status(
+                    app_id,
+                    ApplicationStatus::Draft,
+                    Some(evaluation.0),
+                    cv_pdf.to_str(),
+                    cover_pdf.to_str(),
+                ).await?;
 
-            println!("\n✓ Application recorded (id: {}).", app_id);
-            println!("CV: {}", cv_pdf.display());
-            println!("Cover letter: {}", cover_pdf.display());
+                println!("\n✓ Application recorded (id: {}).", app_id);
+                println!("CV: {}", cv_pdf.display());
+                println!("Cover letter: {}", cover_pdf.display());
+            }
+            Stage::Done {
+                vacancy,
+                evaluation,
+                cv_pdf_path,
+                cover_pdf_path,
+                ..
+            } => {
+                let app_id = store.record_application(
+                    &id,
+                    Some(&vacancy.base.name),
+                    Some(&vacancy.base.employer.name),
+                ).await?;
+                store.update_application_status(
+                    app_id,
+                    ApplicationStatus::Draft,
+                    Some(evaluation.0),
+                    Some(&cv_pdf_path),
+                    Some(&cover_pdf_path),
+                ).await?;
+
+                println!("\n✓ Application recorded (id: {}).", app_id);
+                println!("CV: {}", cv_pdf_path);
+                println!("Cover letter: {}", cover_pdf_path);
+            }
+            other => {
+                return Err(JobsmithError::InvalidWorkflowState {
+                    expected: "compile_pdf or done".to_string(),
+                    actual: other.name().to_string(),
+                });
+            }
         }
-        Stage::Done {
-            vacancy,
-            evaluation,
-            cv_pdf_path,
-            cover_pdf_path,
-            ..
-        } => {
-            let app_id = store.record_application(
-                &id,
-                Some(&vacancy.base.name),
-                Some(&vacancy.base.employer.name),
-            ).await?;
-            store.update_application_status(
-                app_id,
-                ApplicationStatus::Draft,
-                Some(evaluation.0),
-                Some(&cv_pdf_path),
-                Some(&cover_pdf_path),
-            ).await?;
 
-            println!("\n✓ Application recorded (id: {}).", app_id);
-            println!("CV: {}", cv_pdf_path);
-            println!("Cover letter: {}", cover_pdf_path);
-        }
-        other => {
-            return Err(JobsmithError::InvalidWorkflowState {
-                expected: "compile_pdf or done".to_string(),
-                actual: other.name().to_string(),
-            });
-        }
-    }
+        println!("Output directory: {}", output_dir.display());
+        Ok::<(), JobsmithError>(())
+    }.await;
 
     kimi_client.shutdown().await?;
-    println!("Output directory: {}", output_dir.display());
-
-    Ok(())
+    workflow_result
 }
 
 fn get_data_dir() -> Result<PathBuf> {

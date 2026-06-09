@@ -238,23 +238,33 @@ impl WorkflowEngine {
         &self,
         mut stage: Stage,
         kimi_client: &mut crate::workflow::kimi::KimiClient,
+        force: bool,
     ) -> Result<Stage> {
         loop {
             stage = match stage {
                 Stage::EvaluateFit { vacancy, profile } => {
-                    let (score, evaluation_text) =
-                        kimi_client.evaluate_fit(&profile, &vacancy).await?;
-                    if !score.is_acceptable() {
-                        return Err(JobsmithError::FitScoreTooLow {
-                            score: score.0,
-                            min: FitScore::MIN_ACCEPTABLE,
-                        });
-                    }
-                    Stage::DraftCv {
-                        vacancy,
-                        profile,
-                        evaluation: score,
-                        evaluation_text,
+                    if force {
+                        Stage::DraftCv {
+                            vacancy,
+                            profile,
+                            evaluation: FitScore(100),
+                            evaluation_text: "forced: skipping evaluation".to_string(),
+                        }
+                    } else {
+                        let (score, evaluation_text) =
+                            kimi_client.evaluate_fit(&profile, &vacancy).await?;
+                        if !score.is_acceptable() {
+                            return Err(JobsmithError::FitScoreTooLow {
+                                score: score.0,
+                                min: FitScore::MIN_ACCEPTABLE,
+                            });
+                        }
+                        Stage::DraftCv {
+                            vacancy,
+                            profile,
+                            evaluation: score,
+                            evaluation_text,
+                        }
                     }
                 }
                 Stage::DraftCv {

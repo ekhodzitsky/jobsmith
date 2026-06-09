@@ -78,8 +78,8 @@ pub enum JobsmithError {
     FitScoreTooLow { score: i32, min: i32 },
 
     /// User cancelled the operation.
-    #[error("operation cancelled by user")]
-    Cancelled,
+    #[error("operation cancelled: {0}")]
+    Cancelled(String),
 }
 
 /// Convenience type alias for Results in jobsmith.
