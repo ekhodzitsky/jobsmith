@@ -1,24 +1,10 @@
-use std::path::PathBuf;
-
 use jobsmith::profile::{ApplicationStatus, ProfileStore};
 
 mod common;
 
-fn temp_db_path() -> PathBuf {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-    PathBuf::from(format!(
-        "/tmp/jobsmith_test_profile_{}_{}.db",
-        std::process::id(),
-        n
-    ))
-}
-
 #[tokio::test]
 async fn profile_save_load_roundtrip() {
-    let path = temp_db_path();
-    let store = ProfileStore::open(&path).await.unwrap();
+    let store = ProfileStore::open_in_memory().await.unwrap();
     let profile = common::dummy_profile();
 
     store.save_profile(&profile).await.unwrap();
@@ -26,8 +12,6 @@ async fn profile_save_load_roundtrip() {
 
     assert!(loaded.is_some());
     assert_eq!(loaded.unwrap(), profile);
-
-    let _ = std::fs::remove_file(&path);
 }
 
 #[test]
@@ -62,8 +46,7 @@ fn profile_validation_fails_without_email() {
 
 #[tokio::test]
 async fn application_record_crud() {
-    let path = temp_db_path();
-    let store = ProfileStore::open(&path).await.unwrap();
+    let store = ProfileStore::open_in_memory().await.unwrap();
 
     let app_id = store
         .record_application("vac-1", Some("Rust Dev"), Some("Yandex"))
@@ -89,6 +72,4 @@ async fn application_record_crud() {
     assert_eq!(apps[0].fit_score, Some(85));
     assert_eq!(apps[0].cv_path, Some("/tmp/cv.pdf".to_string()));
     assert_eq!(apps[0].cover_path, Some("/tmp/cover.pdf".to_string()));
-
-    let _ = std::fs::remove_file(&path);
 }

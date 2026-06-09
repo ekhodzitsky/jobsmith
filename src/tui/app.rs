@@ -9,6 +9,7 @@ use futures_util::StreamExt;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use tokio::sync::mpsc;
+use tokio::task::JoinHandle;
 
 use crate::error::{JobsmithError, Result};
 use crate::hh::client::HhClient;
@@ -35,6 +36,7 @@ pub struct App {
     pub(crate) detail: Option<VacancyDetail>,
     pub(crate) detail_loading: bool,
     client: HhClient,
+    detail_task: Option<JoinHandle<()>>,
 }
 
 impl App {
@@ -49,6 +51,7 @@ impl App {
             detail: None,
             detail_loading: false,
             client: HhClient::new()?,
+            detail_task: None,
         })
     }
 
@@ -122,7 +125,12 @@ impl App {
         detail_tx: &mpsc::UnboundedSender<Result<VacancyDetail>>,
     ) -> Option<Action> {
         match code {
-            KeyCode::Char('q') | KeyCode::Esc => Some(Action::Quit),
+            KeyCode::Char('q') | KeyCode::Esc => {
+                if let Some(task) = self.detail_task.take() {
+                    task.abort();
+                }
+                Some(Action::Quit)
+            }
             KeyCode::Char('j') | KeyCode::Down => {
                 if !self.filtered.is_empty() {
                     self.selected =
@@ -145,8 +153,12 @@ impl App {
                     let id = self.vacancies[idx].id.clone();
                     let client = self.client.clone();
                     let tx = detail_tx.clone();
+                    if let Some(task) = self.detail_task.take() {
+                        task.abort();
+                    }
                     self.detail_loading = true;
-                    tokio::spawn(async move {
+                    self.detail = None;
+                    self.detail_task = Some(tokio::spawn(async move {
                         let result = client.get_vacancy(&id).await;
                         if let Err(ref e) = result {
                             tracing::warn!(vacancy_id = %id, error = %e, "failed to load vacancy detail");
@@ -154,7 +166,7 @@ impl App {
                         if let Err(e) = tx.send(result) {
                             tracing::warn!(error = %e, "detail channel closed");
                         }
-                    });
+                    }));
                     self.mode = Mode::Detail;
                 }
                 None
@@ -201,6 +213,9 @@ impl App {
                 self.mode = Mode::List;
                 self.detail = None;
                 self.detail_loading = false;
+                if let Some(task) = self.detail_task.take() {
+                    task.abort();
+                }
                 None
             }
             KeyCode::Char('a') => {

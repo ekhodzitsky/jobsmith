@@ -73,8 +73,7 @@ impl ProfileStore {
         Ok(store)
     }
 
-    /// Open an in-memory database (useful for testing).
-    #[cfg(test)]
+    /// Open an in-memory database (useful for testing and quick prototyping).
     pub async fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory().map_err(JobsmithError::Database)?;
         let store = Self {
