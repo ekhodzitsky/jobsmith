@@ -82,7 +82,10 @@ impl App {
                 Some(detail_result) = detail_rx.recv() => {
                     match detail_result {
                         Ok(detail) => self.detail = Some(detail),
-                        Err(_) => self.detail = None,
+                        Err(e) => {
+                            tracing::warn!(error = %e, "detail load failed");
+                            self.detail = None;
+                        }
                     }
                     self.detail_loading = false;
                 }
@@ -145,7 +148,12 @@ impl App {
                     self.detail_loading = true;
                     tokio::spawn(async move {
                         let result = client.get_vacancy(&id).await;
-                        let _ = tx.send(result);
+                        if let Err(ref e) = result {
+                            tracing::warn!(vacancy_id = %id, error = %e, "failed to load vacancy detail");
+                        }
+                        if let Err(e) = tx.send(result) {
+                            tracing::warn!(error = %e, "detail channel closed");
+                        }
                     });
                     self.mode = Mode::Detail;
                 }
