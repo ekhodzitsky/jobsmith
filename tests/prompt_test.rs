@@ -22,7 +22,7 @@ fn build_fit_evaluation_prompt_contains_expected_sections() {
     assert!(prompt.contains("SCORE:"));
     assert!(prompt.contains("VERDICT:"));
     assert!(prompt.contains(&profile.name));
-    assert!(prompt.contains(&vacancy.base.employer.name));
+    assert!(prompt.contains(vacancy.base.employer_name()));
 }
 
 #[test]

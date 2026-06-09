@@ -35,7 +35,8 @@ pub struct Vacancy {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub salary: Option<Salary>,
-    pub employer: Employer,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employer: Option<Employer>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub area: Option<Area>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -73,6 +74,13 @@ pub struct Vacancy {
     pub professional_roles: Option<Vec<NamedEntity>>,
     #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
     pub extra: serde_json::Value,
+}
+
+impl Vacancy {
+    /// Return the employer name, or "Unknown" if not present.
+    pub fn employer_name(&self) -> &str {
+        self.employer.as_ref().map(|e| e.name.as_str()).unwrap_or("Unknown")
+    }
 }
 
 /// Salary information for a vacancy.
@@ -207,6 +215,13 @@ pub struct VacancyDetail {
     pub relocation: Option<Relocation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
+}
+
+impl VacancyDetail {
+    /// Return the employer name, or "Unknown" if not present.
+    pub fn employer_name(&self) -> &str {
+        self.base.employer_name()
+    }
 }
 
 /// Contact information for a vacancy.
@@ -450,7 +465,7 @@ mod tests {
                 currency: Some("RUR".to_string()),
                 gross: Some(true),
             }),
-            employer: Employer {
+            employer: Some(Employer {
                 id: "1".to_string(),
                 name: "Corp".to_string(),
                 url: None,
@@ -458,7 +473,7 @@ mod tests {
                 logo_urls: None,
                 vacancies_url: None,
                 trusted: Some(true),
-            },
+            }),
             area: Some(Area {
                 id: "1".to_string(),
                 name: "Moscow".to_string(),
@@ -506,7 +521,7 @@ mod tests {
                 name: "Senior Dev".to_string(),
                 description: None,
                 salary: None,
-                employer: Employer {
+                employer: Some(Employer {
                     id: "2".to_string(),
                     name: "Other".to_string(),
                     url: None,
@@ -514,7 +529,7 @@ mod tests {
                     logo_urls: None,
                     vacancies_url: None,
                     trusted: None,
-                },
+                }),
                 area: None,
                 vacancy_type: None,
                 experience: None,

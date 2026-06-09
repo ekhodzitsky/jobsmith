@@ -73,7 +73,7 @@ fn draw_table(f: &mut Frame, app: &App, area: Rect) {
             let cells = vec![
                 Cell::from(vacancy.id.clone()),
                 Cell::from(vacancy.name.clone()),
-                Cell::from(vacancy.employer.name.clone()),
+                Cell::from(vacancy.employer_name().to_string()),
                 Cell::from(salary),
                 Cell::from(location),
             ];
@@ -167,7 +167,7 @@ fn draw_detail_popup(f: &mut Frame, app: &App) {
             "ID: {}\nTitle: {}\nCompany: {}\nSalary: {}\nLocation: {}\n\n{}",
             base.id,
             base.name,
-            base.employer.name,
+            base.employer_name(),
             salary,
             location,
             description

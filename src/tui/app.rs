@@ -222,7 +222,7 @@ impl App {
             .enumerate()
             .filter(|(_, v)| {
                 let name = v.name.to_lowercase();
-                let employer = v.employer.name.to_lowercase();
+                let employer = v.employer_name().to_lowercase();
                 name.contains(&query) || employer.contains(&query)
             })
             .map(|(i, _)| i)

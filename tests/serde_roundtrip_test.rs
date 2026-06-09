@@ -14,7 +14,7 @@ fn vacancies_response_roundtrip() {
                 currency: Some("RUR".to_string()),
                 gross: Some(true),
             }),
-            employer: Employer {
+            employer: Some(Employer {
                 id: "1".to_string(),
                 name: "Employer".to_string(),
                 url: Some("url".to_string()),
@@ -26,7 +26,7 @@ fn vacancies_response_roundtrip() {
                 }),
                 vacancies_url: Some("vac".to_string()),
                 trusted: Some(true),
-            },
+            }),
             area: Some(Area {
                 id: "1".to_string(),
                 name: "Moscow".to_string(),
@@ -118,7 +118,7 @@ fn vacancy_roundtrip() {
         name: "Test".to_string(),
         description: None,
         salary: None,
-        employer: Employer {
+        employer: Some(Employer {
             id: "1".to_string(),
             name: "Test".to_string(),
             url: None,
@@ -126,7 +126,7 @@ fn vacancy_roundtrip() {
             logo_urls: None,
             vacancies_url: None,
             trusted: None,
-        },
+        }),
         area: None,
         vacancy_type: None,
         experience: None,
@@ -277,7 +277,7 @@ fn vacancy_detail_roundtrip() {
             name: "Test".to_string(),
             description: None,
             salary: None,
-            employer: Employer {
+            employer: Some(Employer {
                 id: "1".to_string(),
                 name: "Test".to_string(),
                 url: None,
@@ -285,7 +285,7 @@ fn vacancy_detail_roundtrip() {
                 logo_urls: None,
                 vacancies_url: None,
                 trusted: None,
-            },
+            }),
             area: None,
             vacancy_type: None,
             experience: None,

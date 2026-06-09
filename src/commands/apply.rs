@@ -25,7 +25,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
     info!(vacancy_id = %id, "fetching vacancy");
 
     let vacancy = client.get_vacancy(&id).await?;
-    println!("\n=== {} @ {} ===\n", vacancy.base.name, vacancy.base.employer.name);
+    println!("\n=== {} @ {} ===\n", vacancy.base.name, vacancy.base.employer_name());
 
     let mut kimi_client = KimiClient::spawn().await?;
     let engine = WorkflowEngine::new();
@@ -61,7 +61,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 )
                 .await?;
 
-                let employer_safe = templates::sanitize_filename(&vacancy.base.employer.name);
+                let employer_safe = templates::sanitize_filename(vacancy.base.employer_name());
                 let role_safe = templates::sanitize_filename(&vacancy.base.name);
                 let id_safe = templates::sanitize_filename(&id);
                 let cv_pdf = output_dir.join(format!("cv_{}_{}.pdf", employer_safe, id_safe));
@@ -73,7 +73,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 let app_id = store.record_application(
                     &id,
                     Some(&vacancy.base.name),
-                    Some(&vacancy.base.employer.name),
+                    Some(vacancy.base.employer_name()),
                 ).await?;
                 store.update_application_status(
                     app_id,
@@ -97,7 +97,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 let app_id = store.record_application(
                     &id,
                     Some(&vacancy.base.name),
-                    Some(&vacancy.base.employer.name),
+                    Some(vacancy.base.employer_name()),
                 ).await?;
                 store.update_application_status(
                     app_id,

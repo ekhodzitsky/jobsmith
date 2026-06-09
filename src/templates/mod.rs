@@ -82,7 +82,7 @@ pub async fn generate_cv_typst(
 ) -> Result<PathBuf> {
     let file_name = format!(
         "cv_{}.typ",
-        sanitize_filename(&vacancy.base.employer.name)
+        sanitize_filename(vacancy.base.employer_name())
     );
     let output_path = output_dir.join(&file_name);
 
@@ -107,7 +107,7 @@ pub async fn generate_cover_typst(
 ) -> Result<PathBuf> {
     let file_name = format!(
         "cover_{}_{}.typ",
-        sanitize_filename(&vacancy.base.employer.name),
+        sanitize_filename(vacancy.base.employer_name()),
         sanitize_filename(&vacancy.base.name)
     );
     let output_path = output_dir.join(&file_name);
@@ -181,7 +181,7 @@ fn build_cover_typst_source(
         .replace("{{CANDIDATE_CITY}}", &escape_typst(&profile.city))
         .replace("{{CANDIDATE_PHONE}}", &escape_typst(&profile.phone))
         .replace("{{CANDIDATE_EMAIL}}", &escape_typst(&profile.email))
-        .replace("{{COMPANY}}", &escape_typst(&vacancy.base.employer.name))
+        .replace("{{COMPANY}}", &escape_typst(vacancy.base.employer_name()))
         .replace("{{ROLE}}", &escape_typst(&vacancy.base.name))
         .replace("{{CONTENT}}", &escape_typst(cover_content))
 }

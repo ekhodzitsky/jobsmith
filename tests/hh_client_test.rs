@@ -9,7 +9,7 @@ fn make_minimal_vacancy() -> Vacancy {
         name: "Rust Developer".to_string(),
         description: None,
         salary: None,
-        employer: Employer {
+        employer: Some(Employer {
             id: "1".to_string(),
             name: "Test Corp".to_string(),
             url: None,
@@ -17,7 +17,7 @@ fn make_minimal_vacancy() -> Vacancy {
             logo_urls: None,
             vacancies_url: None,
             trusted: None,
-        },
+        }),
         area: None,
         vacancy_type: None,
         experience: None,

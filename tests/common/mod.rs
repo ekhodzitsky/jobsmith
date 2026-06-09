@@ -77,7 +77,7 @@ pub fn dummy_vacancy() -> Vacancy {
             currency: Some("RUR".to_string()),
             gross: Some(true),
         }),
-        employer: Employer {
+        employer: Some(Employer {
             id: "789".to_string(),
             name: "Яндекс".to_string(),
             url: None,
@@ -85,7 +85,7 @@ pub fn dummy_vacancy() -> Vacancy {
             logo_urls: None,
             vacancies_url: None,
             trusted: Some(true),
-        },
+        }),
         area: Some(Area {
             id: "1".to_string(),
             name: "Москва".to_string(),

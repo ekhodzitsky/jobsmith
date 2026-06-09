@@ -85,7 +85,7 @@ pub async fn run(
 
             println!("{}", "─".repeat(60));
             println!("{} | {}", vacancy.id, vacancy.name);
-            println!("  {} | {} | {}", vacancy.employer.name, area, salary);
+            println!("  {} | {} | {}", vacancy.employer_name(), area, salary);
             println!("  Опыт: {}", experience);
             if !snippet.is_empty() {
                 println!("  {}", truncate(&snippet, 150));

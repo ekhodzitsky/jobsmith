@@ -134,7 +134,7 @@ STRENGTHS: <что выделяет кандидата>
         relocate = if profile.ready_to_relocate { "да" } else { "нет" },
         experience_text = format_experience(profile),
         education_text = format_education(profile),
-        company = vacancy.base.employer.name,
+        company = vacancy.base.employer_name(),
         role = vacancy.base.name,
         salary = salary,
         experience_req = experience,
@@ -198,7 +198,7 @@ pub fn build_cv_draft_prompt(
 "#,
         evaluation = evaluation,
         profile_summary = build_compact_profile_summary(profile),
-        company = vacancy.base.employer.name,
+        company = vacancy.base.employer_name(),
         role = vacancy.base.name,
         description = truncate(
             &vacancy
@@ -255,7 +255,7 @@ pub fn build_cover_draft_prompt(
 Ответь только текст письма, без обрамления.
 "#,
         profile_summary = format_profile_summary(profile),
-        company = vacancy.base.employer.name,
+        company = vacancy.base.employer_name(),
         role = vacancy.base.name,
         description = truncate(
             &vacancy
@@ -326,7 +326,7 @@ CRITIQUE:
 ACTION_ITEMS:
 <список конкретных правок>
 "#,
-        company = vacancy.base.employer.name,
+        company = vacancy.base.employer_name(),
         role = vacancy.base.name,
         description = truncate(
             &vacancy
@@ -415,7 +415,7 @@ pub fn build_interview_prep_prompt(profile: &Profile, vacancy: &VacancyDetail) -
 Формат: markdown, на русском.
 "#,
         profile_summary = format_profile_summary(profile),
-        company = vacancy.base.employer.name,
+        company = vacancy.base.employer_name(),
         role = vacancy.base.name,
         description = truncate(
             &vacancy
