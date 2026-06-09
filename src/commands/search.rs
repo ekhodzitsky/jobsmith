@@ -101,9 +101,10 @@ pub async fn run(
 }
 
 fn truncate(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
+    let count = s.chars().count();
+    if count <= max_len {
         s.to_string()
     } else {
-        format!("{}...", &s[..max_len])
+        format!("{}...", s.chars().take(max_len).collect::<String>())
     }
 }

@@ -4,7 +4,7 @@
 
 use std::sync::LazyLock;
 
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 
 use crate::error::{JobsmithError, Result};
 
@@ -42,6 +42,17 @@ static VERDICT_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(
 
 static REASONING_START_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
     Regex::new(r"(?im)^REASONING:\s*")
+        .map_err(|e| format!("invalid regex: {e}"))
+});
+
+static REASONING_END_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
+    let pattern = REASONING_TERMINATORS
+        .iter()
+        .map(|t| regex::escape(t))
+        .collect::<Vec<_>>()
+        .join("|");
+    RegexBuilder::new(&format!("(?i){}", pattern))
+        .build()
         .map_err(|e| format!("invalid regex: {e}"))
 });
 
@@ -91,11 +102,11 @@ fn extract_reasoning(text: &str) -> Result<String> {
         return Ok(String::new());
     };
     let rest = &text[m.end()..];
-    let rest_upper = rest.to_uppercase();
-    let end = REASONING_TERMINATORS
-        .iter()
-        .filter_map(|h| rest_upper.find(&h.to_uppercase()))
-        .min()
+    let end = REASONING_END_RE
+        .as_ref()
+        .map_err(|e| JobsmithError::Process(e.clone()))?
+        .find(rest)
+        .map(|m| m.start())
         .unwrap_or(rest.len());
     Ok(rest[..end].trim().to_string())
 }
@@ -115,6 +126,11 @@ pub fn parse_revised(text: &str) -> Result<(String, String)> {
     let cover_pos = text.find(cover_marker);
 
     let (cv, cover) = if let Some(pos) = cover_pos {
+        if cv_start > pos {
+            return Err(JobsmithError::Process(
+                "invalid marker order: ---COVER--- before ---CV---".to_string(),
+            ));
+        }
         let cv_text = text[cv_start..pos].trim().to_string();
         let cover_text = text[pos + cover_marker.len()..].trim().to_string();
         (cv_text, cover_text)

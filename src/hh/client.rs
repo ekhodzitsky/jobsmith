@@ -211,10 +211,10 @@ pub fn extract_vacancy_id(input: &str) -> Result<String> {
     } else {
         match input
             .split('/')
-            .next_back()
+            .rev()
+            .find(|s| !s.is_empty())
             .and_then(|s| s.split('?').next())
             .and_then(|s| s.split('#').next())
-            .filter(|s| !s.is_empty())
         {
             Some(segment) => segment.to_string(),
             None => input.to_string(),

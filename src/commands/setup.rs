@@ -18,7 +18,9 @@ use chrono::NaiveDate;
 pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
     if let Some(sec) = section {
         info!(section = %sec, "updating profile section");
-        todo!("section-specific update not yet implemented");
+        return Err(JobsmithError::Config(format!(
+            "section-specific update not yet implemented: {sec}"
+        )));
     }
 
     println!("\n=== Jobsmith Profile Setup ===\n");
