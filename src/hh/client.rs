@@ -209,7 +209,13 @@ pub fn extract_vacancy_id(input: &str) -> Result<String> {
     let id = if input.chars().all(|c| c.is_ascii_digit()) {
         input.to_string()
     } else {
-        match input.split('/').next_back().and_then(|s| s.split('?').next()) {
+        match input
+            .split('/')
+            .next_back()
+            .and_then(|s| s.split('?').next())
+            .and_then(|s| s.split('#').next())
+            .filter(|s| !s.is_empty())
+        {
             Some(segment) => segment.to_string(),
             None => input.to_string(),
         }

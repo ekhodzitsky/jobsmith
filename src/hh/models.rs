@@ -71,8 +71,7 @@ pub struct Vacancy {
     pub accept_temporary: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub professional_roles: Option<Vec<NamedEntity>>,
-    #[serde(default)]
-    #[serde(flatten)]
+    #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
     pub extra: serde_json::Value,
 }
 

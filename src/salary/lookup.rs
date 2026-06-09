@@ -49,7 +49,7 @@ pub struct SalaryEntry {
     pub city: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub categories: Option<serde_json::Value>,
-    #[serde(flatten)]
+    #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
     pub extra: serde_json::Value,
 }
 
