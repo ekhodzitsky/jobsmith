@@ -74,8 +74,10 @@ pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
 
 fn confirm_reset(what: &str) -> bool {
     print!("Type RESET to confirm deletion of {}: ", what);
+    // best-effort: an unflushed prompt only degrades UX, the read below still works
     let _ = std::io::Write::flush(&mut std::io::stdout());
     let mut buf = String::new();
+    // best-effort: on read failure buf stays empty -> != "RESET" -> reset is cancelled
     let _ = std::io::stdin().read_line(&mut buf);
     buf.trim() == "RESET"
 }

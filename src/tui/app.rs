@@ -261,6 +261,8 @@ impl TerminalGuard {
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
+        // best-effort: Drop must not panic, and there is no channel to
+        // report a failed restore from here
         let _ = restore_terminal(&mut self.terminal);
     }
 }
