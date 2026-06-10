@@ -4,7 +4,7 @@
 
 use std::io::{self, Write};
 
-use tracing::{info, instrument};
+use tracing::instrument;
 
 use crate::error::{JobsmithError, Result};
 use crate::profile::model::{Education, Experience, Language, LanguageLevel, Profile, WorkPermit};
@@ -13,14 +13,7 @@ use chrono::NaiveDate;
 
 /// Run the profile setup wizard.
 #[instrument(skip(store))]
-pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
-    if let Some(sec) = section {
-        info!(section = %sec, "updating profile section");
-        return Err(JobsmithError::Config(format!(
-            "section-specific update not yet implemented: {sec}"
-        )));
-    }
-
+pub async fn run(store: &ProfileStore) -> Result<()> {
     // The wizard reads stdin with blocking I/O; keep it off the async runtime.
     let profile = tokio::task::spawn_blocking(collect_profile)
         .await

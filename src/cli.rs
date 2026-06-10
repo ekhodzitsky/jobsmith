@@ -27,11 +27,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Set up or update your candidate profile.
-    Setup {
-        /// Update only a specific section.
-        #[arg(short, long)]
-        section: Option<String>,
-    },
+    Setup,
 
     /// Search for vacancies on HeadHunter.
     Search {

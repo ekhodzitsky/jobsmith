@@ -59,7 +59,7 @@ async fn run() -> Result<(), JobsmithError> {
     let db_path = data_dir.join("jobsmith.db");
 
     match cli.command {
-        Commands::Setup { section } => {
+        Commands::Setup => {
             let store = match ProfileStore::open(&db_path).await {
                 Ok(s) => s,
                 Err(e) => {
@@ -67,7 +67,7 @@ async fn run() -> Result<(), JobsmithError> {
                     return Err(e);
                 }
             };
-            setup::run(&store, section.as_deref()).await
+            setup::run(&store).await
         }
         Commands::Search {
             text,
