@@ -48,11 +48,13 @@ pub enum Commands {
         experience: Option<String>,
 
         /// Employment type (full, part, project, volunteer, probation).
-        #[arg(short, long)]
+        // long-only: -e belongs to --experience
+        #[arg(long)]
         employment: Option<String>,
 
         /// Schedule (fullDay, shift, flexible, remote, flyInFlyOut).
-        #[arg(short, long)]
+        // long-only: -s belongs to --salary
+        #[arg(long)]
         schedule: Option<String>,
 
         /// Minimum salary.
@@ -66,6 +68,10 @@ pub enum Commands {
         /// Number of results per page.
         #[arg(short, long, default_value = "20")]
         per_page: i32,
+
+        /// Result page (1-based).
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(i32).range(1..))]
+        page: i32,
 
         /// Launch interactive TUI browser.
         #[arg(short = 'i', long)]
@@ -88,6 +94,13 @@ pub enum Commands {
         /// Show all details.
         #[arg(short, long)]
         detailed: bool,
+    },
+
+    /// Mark a tracked application as submitted.
+    MarkApplied {
+        /// Application ID from `jobsmith list`.
+        #[arg(value_name = "ID")]
+        id: i64,
     },
 
     /// Look up salary benchmarks.

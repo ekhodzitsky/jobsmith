@@ -8,7 +8,7 @@ use clap::Parser;
 use tracing::{error, info};
 
 use jobsmith::cli::{Cli, Commands};
-use jobsmith::commands::{apply, list, reset, salary_cmd, search, setup};
+use jobsmith::commands::{apply, list, mark_applied, reset, salary_cmd, search, setup};
 use jobsmith::error::JobsmithError;
 use jobsmith::hh::models::VacancySearchQuery;
 use jobsmith::profile::store::ProfileStore;
@@ -68,6 +68,7 @@ async fn run() -> Result<(), JobsmithError> {
             salary,
             with_salary,
             per_page,
+            page,
             interactive,
         } => {
             let query = VacancySearchQuery {
@@ -79,7 +80,8 @@ async fn run() -> Result<(), JobsmithError> {
                 salary,
                 currency: Some("RUR".to_string()),
                 only_with_salary: with_salary,
-                page: 0,
+                // CLI is 1-based, HH API is 0-based
+                page: page - 1,
                 per_page,
                 order_by: None,
                 search_field: None,
@@ -106,6 +108,16 @@ async fn run() -> Result<(), JobsmithError> {
                 }
             };
             list::run(&store, detailed).await
+        }
+        Commands::MarkApplied { id } => {
+            let store = match ProfileStore::open(&db_path).await {
+                Ok(s) => s,
+                Err(e) => {
+                    error!(error = %e, "failed to open profile database");
+                    return Err(e);
+                }
+            };
+            mark_applied::run(&store, id).await
         }
         Commands::Reset { target } => reset::run(&target, &data_dir).await,
         Commands::Salary {

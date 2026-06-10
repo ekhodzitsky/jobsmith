@@ -261,6 +261,25 @@ impl ProfileStore {
         Ok(id)
     }
 
+    /// Mark a tracked application as submitted.
+    #[instrument(skip(self))]
+    pub async fn mark_applied(&self, application_id: i64) -> Result<()> {
+        let conn = self.conn.lock().await;
+        let updated = conn
+            .execute(
+                "UPDATE applications SET status = ?1, updated_at = datetime('now') WHERE id = ?2",
+                params![ApplicationStatus::Applied, application_id],
+            )
+            .map_err(JobsmithError::Database)?;
+        if updated == 0 {
+            return Err(JobsmithError::Config(format!(
+                "application {application_id} not found. see `jobsmith list`"
+            )));
+        }
+        info!(application_id, "application marked as applied");
+        Ok(())
+    }
+
     /// Update application status.
     pub async fn update_application_status(
         &self,

@@ -64,6 +64,19 @@ async fn record_application_dedupes_by_vacancy_id() {
 }
 
 #[tokio::test]
+async fn mark_applied_updates_status_and_rejects_unknown_id() {
+    let store = ProfileStore::open_in_memory().await.unwrap();
+    let id = store.record_application("v1", None, None).await.unwrap();
+
+    store.mark_applied(id).await.unwrap();
+    let apps = store.list_applications().await.unwrap();
+    assert_eq!(apps[0].status, ApplicationStatus::Applied);
+
+    let err = store.mark_applied(9999).await.unwrap_err();
+    assert!(err.to_string().contains("not found"), "{err}");
+}
+
+#[tokio::test]
 async fn application_record_crud() {
     let store = ProfileStore::open_in_memory().await.unwrap();
 
