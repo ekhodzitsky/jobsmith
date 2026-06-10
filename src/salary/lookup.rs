@@ -156,7 +156,8 @@ impl SalaryLookup {
         // Substring match (query in name)
         if n_norm.contains(&q_norm) {
             let ratio = q_norm.len() as f64 / n_norm.len() as f64;
-            if q_norm.len() <= 4 && ratio < 0.5 {
+            // chars(), not len(): byte length disables the guard for Cyrillic
+            if q_norm.chars().count() <= 4 && ratio < 0.5 {
                 let q_words: HashSet<_> = self.extract_words(query).into_iter().collect();
                 let n_words: HashSet<_> = self.extract_words(entry_name).into_iter().collect();
                 if !q_words.is_disjoint(&n_words) {
@@ -170,7 +171,8 @@ impl SalaryLookup {
         // Substring match (name in query)
         if q_norm.contains(&n_norm) {
             let ratio = n_norm.len() as f64 / q_norm.len() as f64;
-            if n_norm.len() <= 4 && ratio < 0.5 {
+            // chars(), not len(): byte length disables the guard for Cyrillic
+            if n_norm.chars().count() <= 4 && ratio < 0.5 {
                 let q_words: HashSet<_> = self.extract_words(query).into_iter().collect();
                 let n_words: HashSet<_> = self.extract_words(entry_name).into_iter().collect();
                 if !q_words.is_disjoint(&n_words) {
@@ -287,6 +289,48 @@ mod tests {
         let results = lookup.search("СберТех", None);
         assert!(!results.is_empty());
         assert_eq!(results[0].company, "ООО СберТех");
+    }
+
+    #[test]
+    fn short_cyrillic_substring_needs_word_overlap() {
+        let data = SalaryData {
+            metadata: None,
+            companies: vec![SalaryEntry {
+                company: "Котировкабанк".to_string(),
+                city: None,
+                categories: None,
+                extra: serde_json::json!({}),
+            }],
+        };
+        let lookup = SalaryLookup::new(data).unwrap();
+        // "кот" is 3 chars (6 UTF-8 bytes): the short-query guard must fire
+        // and reject a substring-only match without shared words.
+        let results = lookup.search("кот", None);
+        assert!(
+            results.is_empty(),
+            "short query must not score 80+ on substring alone: {:?}",
+            results.iter().map(|e| &e.company).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn short_cyrillic_name_inside_query_needs_word_overlap() {
+        let data = SalaryData {
+            metadata: None,
+            companies: vec![SalaryEntry {
+                company: "Сбер".to_string(),
+                city: None,
+                categories: None,
+                extra: serde_json::json!({}),
+            }],
+        };
+        let lookup = SalaryLookup::new(data).unwrap();
+        let results = lookup.search("сберегательный союз вкладчиков", None);
+        assert!(
+            results.is_empty(),
+            "short name must not score 80+ on substring alone: {:?}",
+            results.iter().map(|e| &e.company).collect::<Vec<_>>()
+        );
     }
 
     #[test]
