@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Migrated the AI pipeline from the legacy kimi wire protocol to ACP**
+  (Agent Client Protocol), the stdio protocol of Kimi Code CLI 0.14+:
+  `AcpClient` replaces `KimiClient`, the `kimi-wire` dependency is gone,
+  and `JobsmithError::KimiWire` is renamed to `KimiProtocol`. The ACP
+  message pump auto-approves agent permission requests, rejects
+  capability requests we did not declare, keeps the 10 MiB output bound
+  and the 30s spawn/handshake timeout. Verified live against
+  `kimi acp` (Kimi Code 0.14.0, protocol v1), including a real prompt
+  roundtrip (`cargo test --lib acp_live -- --ignored`).
+
 ## [0.2.0] - 2026-06-10
 
 Audit release: every finding of the full code review (10 important,

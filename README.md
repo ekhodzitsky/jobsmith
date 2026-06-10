@@ -27,9 +27,8 @@
 # 1. Установите Typst (для генерации PDF)
 #    https://typst.app
 
-# 2. Установите и авторизуйте kimi CLI с поддержкой wire-протокола —
-#    весь AI-пайплайн (оценка, CV, письма) работает через `kimi --wire`.
-#    Проверьте: `kimi --wire` должен запускаться (см. «Известные ограничения»).
+# 2. Установите Kimi Code CLI и войдите в аккаунт: `kimi login` —
+#    весь AI-пайплайн (оценка, CV, письма) работает через ACP (`kimi acp`).
 
 # 3. Склонируйте и соберите
 git clone https://github.com/ekhodzitsky/jobsmith.git
@@ -71,7 +70,7 @@ jobsmith mark-applied 1   # после реальной отправки отк�
                        └─────────────┘
 ```
 
-**Стек:** Rust · Tokio · rusqlite · ratatui · reqwest · serde · Typst · kimi-wire
+**Стек:** Rust · Tokio · rusqlite · ratatui · reqwest · serde · Typst · ACP (Kimi Code)
 
 ---
 
@@ -163,9 +162,6 @@ jobsmith salary --role 96 --area 1 --json
 - **HH API без токена.** `api.hh.ru` может отвечать `403 forbidden` на анонимные
   запросы (политика HH / региональные ограничения) — тогда `search` и `apply`
   потребуют OAuth-авторизации приложения, которой в jobsmith пока нет.
-- **Протокол kimi.** jobsmith говорит по wire-протоколу (`kimi --wire`,
-  legacy kimi-cli). Новый **kimi-code** (0.14+) использует ACP (`kimi acp`)
-  и флага `--wire` не имеет — миграция на ACP в планах.
 - **`salary --role/--area`** — партнёрский эндпоинт HH (см. выше).
 
 ---
