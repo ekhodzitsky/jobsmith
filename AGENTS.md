@@ -24,7 +24,7 @@ clarifies an invariant, or removes a footgun.
 4. **Forward-compatible fields.** Use `Option<T>` with `#[serde(default, skip_serializing_if = "Option::is_none")]` for HH API models.
 5. **Dependencies are architecture changes.** No new crate without rationale: why std/local code is not enough, transitive impact, MSRV, license.
 6. **Refactors isolate mechanics from behavior.** File moves and formatting-only changes must be separate from semantic changes.
-7. **MSRV is 1.80.**
+7. **MSRV is 1.85** (`kimi-wire` 0.5 requires rustc 1.85; enforced by the `msrv` CI job).
 
 ## Rust Safety Rules (Hard Constraints)
 
