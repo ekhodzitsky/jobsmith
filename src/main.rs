@@ -133,8 +133,26 @@ async fn run() -> Result<(), JobsmithError> {
         Commands::Salary {
             company,
             city,
+            role,
+            area,
+            currency,
             json,
-        } => salary_cmd::run(&company, city.as_deref(), json, &data_dir),
+        } => match (role, area) {
+            (Some(role), Some(area)) => {
+                let client = jobsmith::hh::HhClient::new()?;
+                salary_cmd::run_online(&client, &role, &area, &currency, json).await
+            }
+            // clap's requires-pair guarantees both or neither; defensive
+            (Some(_), None) | (None, Some(_)) => Err(JobsmithError::Config(
+                "--role and --area must be used together".to_string(),
+            )),
+            (None, None) => {
+                let company = company.ok_or_else(|| {
+                    JobsmithError::Config("company name or --role/--area required".to_string())
+                })?;
+                salary_cmd::run(&company, city.as_deref(), json, &data_dir)
+            }
+        },
     }
 }
 

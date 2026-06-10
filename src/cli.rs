@@ -101,13 +101,29 @@ pub enum Commands {
 
     /// Look up salary benchmarks.
     Salary {
-        /// Company name to search.
-        #[arg(value_name = "COMPANY")]
-        company: String,
+        /// Company name to search in the local salary_data.json.
+        #[arg(
+            value_name = "COMPANY",
+            required_unless_present = "role",
+            conflicts_with = "role"
+        )]
+        company: Option<String>,
 
-        /// Filter by city.
-        #[arg(short, long)]
+        /// Filter by city (local lookup only).
+        #[arg(short, long, conflicts_with = "role")]
         city: Option<String>,
+
+        /// HH professional role ID for online statistics (e.g. 96 = developer).
+        #[arg(long, requires = "area")]
+        role: Option<String>,
+
+        /// HH area ID for online statistics (e.g. 1 = Moscow).
+        #[arg(long, requires = "role")]
+        area: Option<String>,
+
+        /// Currency for online statistics.
+        #[arg(long, default_value = "RUR")]
+        currency: String,
 
         /// Output as JSON.
         #[arg(long)]
