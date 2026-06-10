@@ -98,72 +98,7 @@ impl KimiClient {
             .start_prompt(text)
             .await
             .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-
-        let mut output = String::new();
-        let deadline = tokio::time::Instant::now() + self.timeout;
-
-        loop {
-            let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-            let raw = tokio::time::timeout(remaining, self.inner.read_raw_message())
-                .await
-                .map_err(|_| JobsmithError::ProcessTimeout {
-                    duration_secs: self.timeout.as_secs(),
-                })?
-                .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-
-            let msg =
-                parse_wire_message(raw).map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-
-            match msg {
-                WireMessage::Event(notification) => {
-                    if let Event::ContentPart(part) = notification.params {
-                        match part {
-                            ContentPart::Text(TextPart { text }) => {
-                                output.push_str(&text);
-                                if output.len() > MAX_OUTPUT_BYTES {
-                                    return Err(JobsmithError::Process(
-                                        "kimi output exceeded 10 MiB limit".to_string(),
-                                    ));
-                                }
-                            }
-                            ContentPart::Think(ThinkPart { think, .. }) => {
-                                debug!(think_len = think.len(), "received thinking content");
-                            }
-                            other => {
-                                debug!(content_part = ?other, "received non-text content part");
-                            }
-                        }
-                    }
-                }
-                WireMessage::Request(req) => {
-                    let response = req.params.default_response();
-                    self.inner
-                        .send_response(&req.id, response)
-                        .await
-                        .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-                }
-                WireMessage::SuccessResponse(resp) if resp.id == id => {
-                    let result: PromptResult = serde_json::from_value(resp.result)
-                        .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-                    return Ok(KimiPromptResult {
-                        status: result.status,
-                        turn_output: output,
-                    });
-                }
-                WireMessage::ErrorResponse(resp) if resp.id == id => {
-                    return Err(JobsmithError::KimiWire(format!(
-                        "prompt failed: {} (code: {})",
-                        resp.error.message, resp.error.code
-                    )));
-                }
-                WireMessage::SuccessResponse(resp) => {
-                    warn!(response_id = %resp.id, expected_id = %id, "unexpected success response id");
-                }
-                WireMessage::ErrorResponse(resp) => {
-                    warn!(response_id = %resp.id, expected_id = %id, "unexpected error response id");
-                }
-            }
-        }
+        collect_prompt_output(&mut self.inner, &id, self.timeout).await
     }
 
     /// Evaluate how well the profile fits the vacancy.
@@ -233,6 +168,82 @@ impl KimiClient {
             .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
         info!("kimi client shut down");
         Ok(())
+    }
+}
+
+/// Drain wire messages for prompt `id` until its response arrives.
+///
+/// Generic over [`WireClient`] so the loop (deadline handling, output
+/// size limit, response/error routing) can be exercised in tests with
+/// `InMemoryWireClient`.
+async fn collect_prompt_output<C: WireClient>(
+    inner: &mut C,
+    id: &str,
+    prompt_timeout: Duration,
+) -> Result<KimiPromptResult> {
+    let mut output = String::new();
+    let deadline = tokio::time::Instant::now() + prompt_timeout;
+
+    loop {
+        let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+        let raw = tokio::time::timeout(remaining, inner.read_raw_message())
+            .await
+            .map_err(|_| JobsmithError::ProcessTimeout {
+                duration_secs: prompt_timeout.as_secs(),
+            })?
+            .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
+
+        let msg = parse_wire_message(raw).map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
+
+        match msg {
+            WireMessage::Event(notification) => {
+                if let Event::ContentPart(part) = notification.params {
+                    match part {
+                        ContentPart::Text(TextPart { text }) => {
+                            output.push_str(&text);
+                            if output.len() > MAX_OUTPUT_BYTES {
+                                return Err(JobsmithError::Process(
+                                    "kimi output exceeded 10 MiB limit".to_string(),
+                                ));
+                            }
+                        }
+                        ContentPart::Think(ThinkPart { think, .. }) => {
+                            debug!(think_len = think.len(), "received thinking content");
+                        }
+                        other => {
+                            debug!(content_part = ?other, "received non-text content part");
+                        }
+                    }
+                }
+            }
+            WireMessage::Request(req) => {
+                let response = req.params.default_response();
+                inner
+                    .send_response(&req.id, response)
+                    .await
+                    .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
+            }
+            WireMessage::SuccessResponse(resp) if resp.id == id => {
+                let result: PromptResult = serde_json::from_value(resp.result)
+                    .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
+                return Ok(KimiPromptResult {
+                    status: result.status,
+                    turn_output: output,
+                });
+            }
+            WireMessage::ErrorResponse(resp) if resp.id == id => {
+                return Err(JobsmithError::KimiWire(format!(
+                    "prompt failed: {} (code: {})",
+                    resp.error.message, resp.error.code
+                )));
+            }
+            WireMessage::SuccessResponse(resp) => {
+                warn!(response_id = %resp.id, expected_id = %id, "unexpected success response id");
+            }
+            WireMessage::ErrorResponse(resp) => {
+                warn!(response_id = %resp.id, expected_id = %id, "unexpected error response id");
+            }
+        }
     }
 }
 
