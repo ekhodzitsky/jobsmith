@@ -290,6 +290,89 @@ impl crate::workflow::client::WorkflowClient for KimiClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kimi_wire::client::InMemoryWireClient;
+    use kimi_wire::protocol::RawWireMessage;
+
+    fn raw(v: serde_json::Value) -> RawWireMessage {
+        serde_json::from_value(v).expect("valid raw wire message")
+    }
+
+    fn text_event(text: &str) -> RawWireMessage {
+        let event = Event::ContentPart(ContentPart::Text(TextPart {
+            text: text.to_string(),
+        }));
+        raw(serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "event",
+            "params": serde_json::to_value(event).expect("serializable event"),
+        }))
+    }
+
+    fn success_response(id: &str) -> RawWireMessage {
+        raw(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": {"status": "finished"},
+        }))
+    }
+
+    fn error_response(id: &str) -> RawWireMessage {
+        raw(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {"code": -32000, "message": "boom"},
+        }))
+    }
+
+    #[tokio::test]
+    async fn collect_assembles_text_until_success_response() {
+        let mut client = InMemoryWireClient::new();
+        let id = client.start_prompt("hi").await.unwrap();
+        client.inject(text_event("Hello, ")).await;
+        client.inject(text_event("world")).await;
+        client.inject(success_response(&id)).await;
+
+        let result = collect_prompt_output(&mut client, &id, Duration::from_secs(5))
+            .await
+            .unwrap();
+        assert_eq!(result.turn_output, "Hello, world");
+        assert_eq!(result.status, kimi_wire::protocol::PromptStatus::Finished);
+    }
+
+    #[tokio::test]
+    async fn collect_rejects_output_over_limit() {
+        let mut client = InMemoryWireClient::new();
+        let id = client.start_prompt("hi").await.unwrap();
+        client
+            .inject(text_event(&"x".repeat(MAX_OUTPUT_BYTES + 1)))
+            .await;
+
+        let err = collect_prompt_output(&mut client, &id, Duration::from_secs(5))
+            .await
+            .unwrap_err();
+        match err {
+            JobsmithError::Process(msg) => assert!(msg.contains("10 MiB"), "{msg}"),
+            other => panic!("expected Process error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn collect_maps_matching_error_response_to_kimi_wire() {
+        let mut client = InMemoryWireClient::new();
+        let id = client.start_prompt("hi").await.unwrap();
+        client.inject(error_response(&id)).await;
+
+        let err = collect_prompt_output(&mut client, &id, Duration::from_secs(5))
+            .await
+            .unwrap_err();
+        match err {
+            JobsmithError::KimiWire(msg) => {
+                assert!(msg.contains("boom"), "{msg}");
+                assert!(msg.contains("-32000"), "{msg}");
+            }
+            other => panic!("expected KimiWire error, got {other:?}"),
+        }
+    }
 
     /// A spawn against a process that never completes the handshake must
     /// fail with `ProcessTimeout` in bounded time instead of hanging.
