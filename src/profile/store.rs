@@ -85,7 +85,7 @@ impl ProfileStore {
 
     /// Initialize the database schema.
     async fn init(&self) -> Result<()> {
-        let conn = self.conn.lock().await;
+        let mut conn = self.conn.lock().await;
         conn.execute_batch(
             r#"
                 CREATE TABLE IF NOT EXISTS profiles (
@@ -113,6 +113,12 @@ impl ProfileStore {
                 "#,
         )
         .map_err(JobsmithError::Database)?;
+
+        crate::profile::migrations::sql::MigrationRunner::run(
+            &mut conn,
+            crate::profile::migrations::sql::ALL_SQL_MIGRATIONS,
+        )?;
+
         Ok(())
     }
 
