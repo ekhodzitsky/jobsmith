@@ -46,6 +46,33 @@ fn build_cv_draft_prompt_contains_expected_sections() {
 }
 
 #[test]
+fn build_cv_draft_prompt_requests_summary_only() {
+    let profile = common::dummy_profile();
+    let vacancy = common::dummy_vacancy_detail();
+    let prompt = prompts::build_cv_draft_prompt(&profile, &vacancy, "evaluation text");
+
+    // cv.typ renders Опыт работы/Навыки/Образование/Сертификаты/Языки from the
+    // profile itself; if the prompt also requests them, every PDF duplicates
+    // each section. The prompt must ask only for the summary block.
+    for section in [
+        "**Контактная информация**",
+        "**Опыт работы**",
+        "**Образование**",
+        "**Сертификаты**",
+        "**Языки**",
+    ] {
+        assert!(
+            !prompt.contains(section),
+            "prompt must not request profile section {section:?}"
+        );
+    }
+    assert!(
+        prompt.contains("Профессиональное резюме"),
+        "prompt must request the summary block that fills {{{{SUMMARY}}}}"
+    );
+}
+
+#[test]
 fn build_cover_draft_prompt_is_non_empty() {
     let profile = common::dummy_profile();
     let vacancy = common::dummy_vacancy_detail();
