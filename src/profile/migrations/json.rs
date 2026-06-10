@@ -42,12 +42,12 @@ impl JsonMigrationRunner {
                 .find(|m| m.from_version == version)
                 .ok_or_else(|| JobsmithError::Migration {
                     version,
-                    source: format!("no migration found from version {version}"),
+                    detail: format!("no migration found from version {version}"),
                 })?;
 
             value = (migration.migrate)(value).map_err(|e| JobsmithError::Migration {
                 version: migration.to_version,
-                source: e.to_string(),
+                detail: e.to_string(),
             })?;
 
             version = migration.to_version;

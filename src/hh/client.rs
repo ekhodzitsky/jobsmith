@@ -200,6 +200,10 @@ impl HhClient {
     }
 
     /// Fetch salary statistics for a professional role in a given area.
+    ///
+    /// Not wired into a command yet: kept (and tested) as the intended
+    /// online data source for `jobsmith salary` alongside the local
+    /// `salary_data.json` lookup.
     #[instrument(skip(self), fields(professional_role = %professional_role, area = %area))]
     pub async fn get_salary_statistics(
         &self,

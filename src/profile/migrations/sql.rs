@@ -41,7 +41,7 @@ impl MigrationRunner {
                 tx.execute_batch(migration.sql)
                     .map_err(|e| JobsmithError::Migration {
                         version: migration.version,
-                        source: e.to_string(),
+                        detail: e.to_string(),
                     })?;
                 tx.execute(
                     "INSERT INTO _schema_migrations(version) VALUES (?1)",

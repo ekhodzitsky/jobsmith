@@ -94,7 +94,6 @@ fn vacancies_response_roundtrip() {
                 id: Some("96".to_string()),
                 name: Some("Developer".to_string()),
             }]),
-            extra: serde_json::Value::Object(Default::default()),
         }],
         found: 1,
         pages: 1,
@@ -144,7 +143,6 @@ fn vacancy_roundtrip() {
         working_time_modes: None,
         accept_temporary: None,
         professional_roles: None,
-        extra: serde_json::Value::Object(Default::default()),
     };
     let json = serde_json::to_string(&original).unwrap();
     let deserialized: Vacancy = serde_json::from_str(&json).unwrap();
@@ -303,7 +301,6 @@ fn vacancy_detail_roundtrip() {
             working_time_modes: None,
             accept_temporary: None,
             professional_roles: None,
-            extra: serde_json::Value::Object(Default::default()),
         },
         contacts: Some(Contacts {
             name: Some("Contact".to_string()),

@@ -396,48 +396,6 @@ pub fn build_revision_prompt(
     )
 }
 
-/// Build the interview prep prompt.
-pub fn build_interview_prep_prompt(profile: &Profile, vacancy: &VacancyDetail) -> String {
-    format!(
-        r#"Ты — карьерный коуч. Подготовь кандидата к собеседованию.
-
-## Профиль
-
-{profile_summary}
-
-## Вакансия
-
-**Компания:** {company}
-**Роль:** {role}
-**Описание:** {description}
-
-## Инструкция
-
-Подготовь:
-
-1. **Предполагаемые вопросы** (10-15 штук) по роли и опыту
-2. **STAR-ответы** на 5 ключевых вопросов
-3. **Вопросы кандидату компании** (5-7 штук)
-4. **Слабые стороны** — как адресовать gap'ы
-5. **Ключевые talking points** — что подчеркнуть
-
-Формат: markdown, на русском.
-"#,
-        profile_summary = format_profile_summary(profile),
-        company = vacancy.base.employer_name(),
-        role = vacancy.base.name,
-        description = truncate(
-            &vacancy
-                .base
-                .description
-                .as_deref()
-                .map(crate::hh::models::strip_html)
-                .unwrap_or_default(),
-            PROMPT_DESCRIPTION_LIMIT
-        ),
-    )
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

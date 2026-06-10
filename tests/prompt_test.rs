@@ -131,22 +131,3 @@ fn build_revision_prompt_contains_expected_sections() {
     assert!(prompt.contains("---CV---"));
     assert!(prompt.contains("---COVER---"));
 }
-
-#[test]
-fn build_interview_prep_prompt_is_non_empty() {
-    let profile = common::dummy_profile();
-    let vacancy = common::dummy_vacancy_detail();
-    let prompt = prompts::build_interview_prep_prompt(&profile, &vacancy);
-    assert!(!prompt.is_empty());
-}
-
-#[test]
-fn build_interview_prep_prompt_contains_expected_sections() {
-    let profile = common::dummy_profile();
-    let vacancy = common::dummy_vacancy_detail();
-    let prompt = prompts::build_interview_prep_prompt(&profile, &vacancy);
-
-    assert!(prompt.contains("Профиль"));
-    assert!(prompt.contains("Вакансия"));
-    assert!(prompt.contains("Инструкция"));
-}

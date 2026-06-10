@@ -130,15 +130,6 @@ impl SalaryLookup {
         scored.into_iter().map(|(_, entry)| entry).collect()
     }
 
-    /// List all company names.
-    pub fn list_all(&self) -> Vec<(&str, Option<&str>)> {
-        self.data
-            .companies
-            .iter()
-            .map(|e| (e.company.as_str(), e.city.as_deref()))
-            .collect()
-    }
-
     /// Compute a match score between 0 and 100.
     fn match_score(&self, query: &str, entry_name: &str) -> i32 {
         let q_norm = self.normalize(query);
@@ -193,13 +184,9 @@ impl SalaryLookup {
 
         let overlap: HashSet<_> = q_words.intersection(&n_words).collect();
         if !overlap.is_empty() {
+            // with one query word, a non-empty overlap means that word matched
             if q_words.len() == 1 {
-                if let Some(q_word) = q_words.iter().next() {
-                    if n_words.contains(q_word) {
-                        return 70;
-                    }
-                }
-                return 0;
+                return 70;
             }
             let coverage = overlap.len() as f64 / q_words.len() as f64;
             return 30 + (coverage * 40.0) as i32;

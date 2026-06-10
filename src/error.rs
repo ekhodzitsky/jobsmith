@@ -78,8 +78,8 @@ pub enum JobsmithError {
     InvalidApplicationStatus(String),
 
     /// Database migration failed.
-    #[error("migration failed at version {version}: {source}")]
-    Migration { version: u32, r#source: String },
+    #[error("migration failed at version {version}: {detail}")]
+    Migration { version: u32, detail: String },
 
     /// Fit score is below the minimum acceptable threshold.
     #[error("fit score {score} is below the minimum acceptable threshold of {min}")]

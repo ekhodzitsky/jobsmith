@@ -135,6 +135,9 @@ impl ProfileStore {
     }
 
     /// Save or update the candidate profile.
+    ///
+    /// Does not validate the profile; validation happens in `setup`
+    /// before saving.
     #[instrument(skip(self, profile))]
     pub async fn save_profile(&self, profile: &Profile) -> Result<()> {
         let mut value = serde_json::to_value(profile).map_err(JobsmithError::Json)?;

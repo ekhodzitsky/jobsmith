@@ -30,6 +30,9 @@ const REASONING_TERMINATORS: &[&str] = &[
     "---COVER---",
 ];
 
+// The patterns below are compile-time constants and cannot fail to build;
+// the Result-in-LazyLock shape only exists because a panicking initializer
+// is banned (AGENTS.md), so the error arm is structurally unreachable.
 static SCORE_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
     Regex::new(r"(?im)^SCORE:\s*(\d+)").map_err(|e| format!("invalid regex: {e}"))
 });

@@ -74,8 +74,6 @@ pub struct Vacancy {
     pub accept_temporary: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub professional_roles: Option<Vec<NamedEntity>>,
-    #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
-    pub extra: serde_json::Value,
 }
 
 impl Vacancy {
@@ -515,7 +513,6 @@ mod tests {
             working_time_modes: None,
             accept_temporary: None,
             professional_roles: None,
-            extra: serde_json::Value::Object(Default::default()),
         };
 
         let json = serde_json::to_string(&vacancy).unwrap();
@@ -557,7 +554,6 @@ mod tests {
                 working_time_modes: None,
                 accept_temporary: None,
                 professional_roles: None,
-                extra: serde_json::Value::Object(Default::default()),
             },
             contacts: Some(Contacts {
                 name: Some("HR".to_string()),
@@ -776,6 +772,27 @@ mod tests {
         );
         let decoded: Employer = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, decoded);
+    }
+
+    #[test]
+    fn search_query_to_params_serializes_only_set_fields() {
+        let query = VacancySearchQuery {
+            text: Some("rust".to_string()),
+            salary: Some(200_000),
+            only_with_salary: false,
+            page: 2,
+            per_page: 50,
+            ..VacancySearchQuery::default()
+        };
+        let params = query.to_params();
+        let keys: Vec<&str> = params.iter().map(|(k, _)| *k).collect();
+
+        // unset Options are omitted; page/per_page are always present
+        assert_eq!(keys, vec!["text", "salary", "page", "per_page"]);
+        assert!(params.contains(&("page", "2".to_string())));
+        assert!(params.contains(&("salary", "200000".to_string())));
+        // only_with_salary=false must omit the param entirely
+        assert!(!keys.contains(&"only_with_salary"));
     }
 
     #[test]
