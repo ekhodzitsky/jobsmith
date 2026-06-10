@@ -1,7 +1,9 @@
 //! HeadHunter API models.
 //!
-//! All models use `Option<T>` with `skip_serializing_if` for forward compatibility
-//! with HH API changes, per AGENTS.md.
+//! All optional fields use `Option<T>` with `skip_serializing_if` for forward
+//! compatibility with HH API changes, per AGENTS.md. The only required fields
+//! are `Vacancy.id`/`Vacancy.name` (and pagination counters): a vacancy
+//! without an id or title is unusable downstream.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
