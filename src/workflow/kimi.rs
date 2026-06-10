@@ -19,6 +19,9 @@ use crate::workflow::prompts;
 use crate::workflow::state::FitScore;
 
 const DEFAULT_PROMPT_TIMEOUT: Duration = Duration::from_secs(300);
+/// Bound on spawning `kimi --wire` plus the initialize handshake;
+/// a hung handshake otherwise blocks `apply` forever (AGENTS.md rule 6).
+const SPAWN_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_OUTPUT_BYTES: usize = 10 * 1024 * 1024; // 10 MiB
 
 /// Result of a single prompt turn.
@@ -41,15 +44,30 @@ impl KimiClient {
     /// Spawn a new Kimi client via `kimi --wire`.
     #[instrument]
     pub async fn spawn() -> Result<Self> {
-        let transport = ChildProcessTransport::spawn("kimi", None, None, None)
-            .await
-            .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
-        let mut client = Self {
-            inner: TransportWireClient::new(transport),
-            timeout: DEFAULT_PROMPT_TIMEOUT,
-        };
-        client.initialize().await?;
-        Ok(client)
+        Self::spawn_binary_with_timeout("kimi", SPAWN_TIMEOUT).await
+    }
+
+    /// Spawn a wire client from an explicit binary, bounding both the
+    /// process spawn and the protocol handshake by `spawn_timeout`.
+    ///
+    /// On timeout the transport is dropped, and `kill_on_drop` inside
+    /// `ChildProcessTransport` reaps the child.
+    async fn spawn_binary_with_timeout(binary: &str, spawn_timeout: Duration) -> Result<Self> {
+        tokio::time::timeout(spawn_timeout, async {
+            let transport = ChildProcessTransport::spawn(binary, None, None, None)
+                .await
+                .map_err(|e| JobsmithError::KimiWire(e.to_string()))?;
+            let mut client = Self {
+                inner: TransportWireClient::new(transport),
+                timeout: DEFAULT_PROMPT_TIMEOUT,
+            };
+            client.initialize().await?;
+            Ok(client)
+        })
+        .await
+        .map_err(|_| JobsmithError::ProcessTimeout {
+            duration_secs: spawn_timeout.as_secs(),
+        })?
     }
 
     /// Initialize the wire protocol handshake.
@@ -255,5 +273,42 @@ impl crate::workflow::client::WorkflowClient for KimiClient {
         review: &'a str,
     ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
         async move { KimiClient::revise(self, profile, cv_draft, cover_draft, review).await }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A spawn against a process that never completes the handshake must
+    /// fail with `ProcessTimeout` in bounded time instead of hanging.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn spawn_times_out_on_hung_handshake() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let script =
+            std::env::temp_dir().join(format!("jobsmith-hung-kimi-{}.sh", std::process::id()));
+        std::fs::write(&script, "#!/bin/sh\nsleep 600\n").unwrap();
+        let mut perms = std::fs::metadata(&script).unwrap().permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&script, perms).unwrap();
+
+        let result = tokio::time::timeout(
+            Duration::from_secs(5),
+            KimiClient::spawn_binary_with_timeout(
+                script.to_str().unwrap_or_default(),
+                Duration::from_millis(300),
+            ),
+        )
+        .await;
+        // best-effort cleanup of the helper script
+        let _ = std::fs::remove_file(&script);
+
+        let spawn_result = result.expect("spawn must finish in bounded time, not hang");
+        match spawn_result {
+            Err(JobsmithError::ProcessTimeout { .. }) => {}
+            other => panic!("expected ProcessTimeout, got {other:?}"),
+        }
     }
 }
