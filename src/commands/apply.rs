@@ -49,7 +49,7 @@ pub async fn run(
     let output_dir = templates::ensure_output_dir(data_dir).await?;
 
     let workflow_result = async {
-        match final_stage {
+        let done = match final_stage {
             Stage::CompilePdf {
                 vacancy,
                 profile,
@@ -74,33 +74,31 @@ pub async fn run(
                 templates::compile_typst(&cv_typst, &cv_pdf).await?;
                 templates::compile_typst(&cover_typst, &cover_pdf).await?;
 
-                let app_id = store
-                    .record_application(
-                        &id,
-                        Some(&vacancy.base.name),
-                        Some(vacancy.base.employer_name()),
-                    )
-                    .await?;
-                // forced runs skip evaluation: a synthetic 100 would corrupt history
-                let recorded_score = if force {
-                    None
-                } else {
-                    Some(evaluation.score())
-                };
-                store
-                    .update_application_status(
-                        app_id,
-                        ApplicationStatus::Draft,
-                        recorded_score,
-                        cv_pdf.to_str(),
-                        cover_pdf.to_str(),
-                    )
-                    .await?;
-
-                println!("\n✓ Application recorded (id: {}).", app_id);
-                println!("CV: {}", cv_pdf.display());
-                println!("Cover letter: {}", cover_pdf.display());
+                // Rebuild-and-transition through the FSM, mirroring the
+                // WorkflowEngine::run idiom, so Done is the single state
+                // that gets recorded below.
+                Stage::CompilePdf {
+                    vacancy,
+                    profile,
+                    evaluation,
+                    final_cv,
+                    final_cover,
+                }
+                .into_done(
+                    cv_pdf.display().to_string(),
+                    cover_pdf.display().to_string(),
+                )?
             }
+            done @ Stage::Done { .. } => done,
+            other => {
+                return Err(JobsmithError::InvalidWorkflowState {
+                    expected: "compile_pdf or done".to_string(),
+                    actual: other.name().to_string(),
+                });
+            }
+        };
+
+        match done {
             Stage::Done {
                 vacancy,
                 evaluation,
@@ -135,9 +133,10 @@ pub async fn run(
                 println!("CV: {}", cv_pdf_path);
                 println!("Cover letter: {}", cover_pdf_path);
             }
+            // into_done only produces Done; defensive arm, never a panic
             other => {
                 return Err(JobsmithError::InvalidWorkflowState {
-                    expected: "compile_pdf or done".to_string(),
+                    expected: "done".to_string(),
                     actual: other.name().to_string(),
                 });
             }
