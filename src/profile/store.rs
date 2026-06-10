@@ -297,9 +297,9 @@ impl ProfileStore {
     }
 }
 
-#[cfg(test)]
 impl ProfileStore {
     /// Insert a raw JSON profile bypassing serialization (for migration tests).
+    #[doc(hidden)]
     pub async fn insert_raw_profile(&self, json: &str) -> Result<()> {
         let conn = self.conn.lock().await;
         conn.execute(

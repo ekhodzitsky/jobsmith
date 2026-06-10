@@ -217,3 +217,43 @@ impl KimiClient {
         Ok(())
     }
 }
+
+#[allow(clippy::manual_async_fn)]
+impl crate::workflow::client::WorkflowClient for KimiClient {
+    fn evaluate_fit<'a>(
+        &'a mut self,
+        profile: &'a Profile,
+        vacancy: &'a VacancyDetail,
+    ) -> impl std::future::Future<Output = Result<(FitScore, String)>> + 'a {
+        async move { KimiClient::evaluate_fit(self, profile, vacancy).await }
+    }
+
+    fn draft_cv<'a>(
+        &'a mut self,
+        profile: &'a Profile,
+        vacancy: &'a VacancyDetail,
+        evaluation_text: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { KimiClient::draft_cv(self, profile, vacancy, evaluation_text).await }
+    }
+
+    fn review<'a>(
+        &'a mut self,
+        profile: &'a Profile,
+        vacancy: &'a VacancyDetail,
+        cv_draft: &'a str,
+        cover_draft: &'a str,
+    ) -> impl std::future::Future<Output = Result<String>> + 'a {
+        async move { KimiClient::review(self, profile, vacancy, cv_draft, cover_draft).await }
+    }
+
+    fn revise<'a>(
+        &'a mut self,
+        profile: &'a Profile,
+        cv_draft: &'a str,
+        cover_draft: &'a str,
+        review: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { KimiClient::revise(self, profile, cv_draft, cover_draft, review).await }
+    }
+}

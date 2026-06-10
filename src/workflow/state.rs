@@ -250,10 +250,10 @@ impl WorkflowEngine {
     /// Each stage sends a prompt through the wire client and advances the state
     /// machine with the parsed response. Stops at `CompilePdf` so the caller
     /// can compile PDFs and transition to `Done`.
-    pub async fn run(
+    pub async fn run<T: crate::workflow::client::WorkflowClient>(
         &self,
         mut stage: Stage,
-        kimi_client: &mut crate::workflow::kimi::KimiClient,
+        client: &mut T,
         force: bool,
     ) -> Result<Stage> {
         loop {
@@ -264,7 +264,7 @@ impl WorkflowEngine {
                             .into_draft_cv(FitScore::new(100)?, "forced: skipping evaluation".to_string())?
                     } else {
                         let (score, evaluation_text) =
-                            kimi_client.evaluate_fit(&profile, &vacancy).await?;
+                            client.evaluate_fit(&profile, &vacancy).await?;
                         Stage::EvaluateFit { vacancy, profile }
                             .into_draft_cv(score, evaluation_text)?
                     }
@@ -276,7 +276,7 @@ impl WorkflowEngine {
                     evaluation_text,
                 } => {
                     let (cv_draft, cover_draft) =
-                        kimi_client.draft_cv(&profile, &vacancy, &evaluation_text).await?;
+                        client.draft_cv(&profile, &vacancy, &evaluation_text).await?;
                     Stage::DraftCv {
                         vacancy,
                         profile,
@@ -292,7 +292,7 @@ impl WorkflowEngine {
                     cv_draft,
                     cover_draft,
                 } => {
-                    let review = kimi_client
+                    let review = client
                         .review(&profile, &vacancy, &cv_draft, &cover_draft)
                         .await?;
                     Stage::Review {
@@ -312,7 +312,7 @@ impl WorkflowEngine {
                     cover_draft,
                     review,
                 } => {
-                    let (final_cv, final_cover) = kimi_client
+                    let (final_cv, final_cover) = client
                         .revise(&profile, &cv_draft, &cover_draft, &review)
                         .await?;
                     Stage::Revise {

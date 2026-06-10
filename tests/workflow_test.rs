@@ -116,3 +116,49 @@ fn unacceptable_fit_score_blocks_transition() {
 
     assert!(matches!(err, JobsmithError::FitScoreTooLow { .. }));
 }
+
+#[tokio::test]
+async fn workflow_run_reaches_compile_pdf() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+
+    let mut client = common::MockKimiClient::default();
+    let engine = WorkflowEngine::new();
+    let stage = engine.start(vacancy, profile);
+
+    let result = engine.run(stage, &mut client, false).await.unwrap();
+    assert_eq!(result.name(), "compile_pdf");
+}
+
+#[tokio::test]
+async fn workflow_run_with_force_skips_evaluation() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+
+    let mut client = common::MockKimiClient {
+        fit_score: 30, // would normally fail
+        ..Default::default()
+    };
+    let engine = WorkflowEngine::new();
+    let stage = engine.start(vacancy, profile);
+
+    // force=true should skip evaluation and proceed
+    let result = engine.run(stage, &mut client, true).await.unwrap();
+    assert_eq!(result.name(), "compile_pdf");
+}
+
+#[tokio::test]
+async fn workflow_run_low_score_stops_early() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+
+    let mut client = common::MockKimiClient {
+        fit_score: 30,
+        ..Default::default()
+    };
+    let engine = WorkflowEngine::new();
+    let stage = engine.start(vacancy, profile);
+
+    let err = engine.run(stage, &mut client, false).await.unwrap_err();
+    assert!(matches!(err, JobsmithError::FitScoreTooLow { .. }));
+}
