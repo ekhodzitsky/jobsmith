@@ -27,22 +27,27 @@
 # 1. Установите Typst (для генерации PDF)
 #    https://typst.app
 
-# 2. Склонируйте и соберите
+# 2. Установите и авторизуйте Kimi Code CLI — весь AI-пайплайн
+#    (оценка, CV, письма) работает через `kimi --wire`.
+#    Проверьте, что `kimi` запускается и вы вошли в аккаунт.
+
+# 3. Склонируйте и соберите
 git clone https://github.com/ekhodzitsky/jobsmith.git
 cd jobsmith
 cargo install --path .
 
-# 3. Заполните профиль — интерактивный wizard
+# 4. Заполните профиль — интерактивный wizard
 jobsmith setup
 
-# 4. Найдите вакансии
+# 5. Найдите вакансии
 jobsmith search "Rust developer" --area 1 --experience between3And6
 
-# 5. Откликнитесь с AI-generated документами
+# 6. Откликнитесь с AI-generated документами
 jobsmith apply https://hh.ru/vacancy/123456
 
-# 6. Следите за статусами
+# 7. Следите за статусами
 jobsmith list
+jobsmith mark-applied 1   # после реальной отправки отклика
 ```
 
 ---
@@ -88,6 +93,7 @@ jobsmith setup              # Интерактивное создание про
 jobsmith search <query>     # Поиск вакансий на hh.ru
 jobsmith apply <url|id>     # AI-пайплайн: оценка → CV → письмо → PDF
 jobsmith list               # Список откликов и статусов
+jobsmith mark-applied <id>  # Отметить отклик как отправленный
 jobsmith salary <company>   # Справочник зарплат (нужен salary_data.json, см. ниже)
 jobsmith reset              # Сброс профиля или данных
 ```
@@ -100,7 +106,7 @@ jobsmith reset              # Сброс профиля или данных
 |----------|---------|
 | `--area` | `1` — Москва, `2` — СПб |
 | `--experience` | `noExperience` · `between1And3` · `between3And6` · `moreThan6` |
-| `--employment` | `full` · `part` · `project` · `remote` · `probation` |
+| `--employment` | `full` · `part` · `project` · `volunteer` · `probation` |
 | `--schedule` | `fullDay` · `shift` · `flexible` · `remote` · `flyInFlyOut` |
 
 ---
