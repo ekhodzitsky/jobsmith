@@ -23,6 +23,15 @@ pub struct JsonMigrationRunner;
 impl JsonMigrationRunner {
     /// Migrate a JSON value up to `CURRENT_PROFILE_SCHEMA`.
     pub fn run(value: Value, migrations: &[JsonProfileMigration]) -> Result<Value> {
+        Self::run_to(value, migrations, CURRENT_PROFILE_SCHEMA)
+    }
+
+    /// Migrate a JSON value up to an explicit target version.
+    pub fn run_to(
+        value: Value,
+        migrations: &[JsonProfileMigration],
+        target: u32,
+    ) -> Result<Value> {
         let mut version = value
             .get("schema_version")
             .and_then(|v| v.as_u64())
@@ -31,7 +40,7 @@ impl JsonMigrationRunner {
 
         let mut value = value;
 
-        while version < CURRENT_PROFILE_SCHEMA {
+        while version < target {
             let migration = migrations
                 .iter()
                 .find(|m| m.from_version == version)
