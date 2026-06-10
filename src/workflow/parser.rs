@@ -62,28 +62,30 @@ static REASONING_END_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock
 pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
     let score_re = SCORE_RE
         .as_ref()
-        .map_err(|e| JobsmithError::Process(e.clone()))?;
+        .map_err(|e| JobsmithError::ResponseParse(e.clone()))?;
     let score: i32 = score_re
         .captures(text)
         .and_then(|c| c.get(1))
         .and_then(|m| m.as_str().parse().ok())
-        .ok_or_else(|| JobsmithError::Process("failed to parse SCORE from response".to_string()))?;
+        .ok_or_else(|| {
+            JobsmithError::ResponseParse("failed to parse SCORE from response".to_string())
+        })?;
 
     if score > 100 {
-        return Err(JobsmithError::Process(format!(
+        return Err(JobsmithError::ResponseParse(format!(
             "score {score} exceeds maximum of 100"
         )));
     }
 
     let verdict_re = VERDICT_RE
         .as_ref()
-        .map_err(|e| JobsmithError::Process(e.clone()))?;
+        .map_err(|e| JobsmithError::ResponseParse(e.clone()))?;
     let verdict = verdict_re
         .captures(text)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_lowercase())
         .ok_or_else(|| {
-            JobsmithError::Process("failed to parse VERDICT from response".to_string())
+            JobsmithError::ResponseParse("failed to parse VERDICT from response".to_string())
         })?;
 
     let reasoning = extract_reasoning(text)?;
@@ -98,14 +100,14 @@ pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
 fn extract_reasoning(text: &str) -> Result<String> {
     let re = REASONING_START_RE
         .as_ref()
-        .map_err(|e| JobsmithError::Process(e.clone()))?;
+        .map_err(|e| JobsmithError::ResponseParse(e.clone()))?;
     let Some(m) = re.find(text) else {
         return Ok(String::new());
     };
     let rest = &text[m.end()..];
     let end = REASONING_END_RE
         .as_ref()
-        .map_err(|e| JobsmithError::Process(e.clone()))?
+        .map_err(|e| JobsmithError::ResponseParse(e.clone()))?
         .find(rest)
         .map(|m| m.start())
         .unwrap_or(rest.len());
@@ -123,14 +125,14 @@ pub fn parse_revised(text: &str) -> Result<(String, String)> {
         .find(cv_marker)
         .map(|i| i + cv_marker.len())
         .ok_or_else(|| {
-            JobsmithError::Process("failed to parse CV from revision response".to_string())
+            JobsmithError::ResponseParse("failed to parse CV from revision response".to_string())
         })?;
 
     let cover_pos = text.find(cover_marker);
 
     let (cv, cover) = if let Some(pos) = cover_pos {
         if cv_start > pos {
-            return Err(JobsmithError::Process(
+            return Err(JobsmithError::ResponseParse(
                 "invalid marker order: ---COVER--- before ---CV---".to_string(),
             ));
         }
@@ -143,7 +145,7 @@ pub fn parse_revised(text: &str) -> Result<(String, String)> {
     };
 
     if cover.is_empty() {
-        return Err(JobsmithError::Process(
+        return Err(JobsmithError::ResponseParse(
             "failed to parse cover letter from revision response".to_string(),
         ));
     }

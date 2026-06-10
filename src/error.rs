@@ -57,6 +57,10 @@ pub enum JobsmithError {
     #[error("process execution failed: {0}")]
     Process(String),
 
+    /// AI response could not be parsed into the expected structure.
+    #[error("response parse failed: {0}")]
+    ResponseParse(String),
+
     /// External process timed out.
     #[error("process timed out after {duration_secs}s")]
     ProcessTimeout { duration_secs: u64 },

@@ -22,7 +22,7 @@ impl FitScore {
         if (0..=100).contains(&score) {
             Ok(Self(score))
         } else {
-            Err(JobsmithError::Process(format!(
+            Err(JobsmithError::ResponseParse(format!(
                 "fit score must be between 0 and 100, got {score}"
             )))
         }

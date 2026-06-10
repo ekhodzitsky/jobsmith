@@ -202,7 +202,7 @@ async fn collect_prompt_output<C: WireClient>(
                         ContentPart::Text(TextPart { text }) => {
                             output.push_str(&text);
                             if output.len() > MAX_OUTPUT_BYTES {
-                                return Err(JobsmithError::Process(
+                                return Err(JobsmithError::KimiWire(
                                     "kimi output exceeded 10 MiB limit".to_string(),
                                 ));
                             }
@@ -351,8 +351,8 @@ mod tests {
             .await
             .unwrap_err();
         match err {
-            JobsmithError::Process(msg) => assert!(msg.contains("10 MiB"), "{msg}"),
-            other => panic!("expected Process error, got {other:?}"),
+            JobsmithError::KimiWire(msg) => assert!(msg.contains("10 MiB"), "{msg}"),
+            other => panic!("expected KimiWire error, got {other:?}"),
         }
     }
 
