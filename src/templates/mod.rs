@@ -393,25 +393,38 @@ fn escape_typst(text: &str) -> String {
 ///
 /// Typst and Markdown share `*bold*`, `_italic_`, and `- lists`,
 /// but headings use `# ` in Markdown and `= ` in Typst.
+///
+/// The input is AI output derived from externally controlled vacancy
+/// descriptions, so any `#` outside the heading conversion is escaped:
+/// `#` is the only character that switches Typst markup into code mode
+/// (`#read(...)`, `#image(...)`).
 fn markdown_to_typst(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
     for line in text.lines() {
         let trimmed = line.trim_start();
         if let Some(rest) = trimmed.strip_prefix("### ") {
             result.push_str("=== ");
-            result.push_str(rest);
+            result.push_str(&escape_typst_code(rest));
         } else if let Some(rest) = trimmed.strip_prefix("## ") {
             result.push_str("== ");
-            result.push_str(rest);
+            result.push_str(&escape_typst_code(rest));
         } else if let Some(rest) = trimmed.strip_prefix("# ") {
             result.push_str("= ");
-            result.push_str(rest);
+            result.push_str(&escape_typst_code(rest));
         } else {
-            result.push_str(line);
+            result.push_str(&escape_typst_code(line));
         }
         result.push('\n');
     }
     result
+}
+
+/// Escape `#` so untrusted content cannot invoke Typst code.
+///
+/// Unlike [`escape_typst`], shared Markdown/Typst formatting
+/// (`*bold*`, `_italic_`, `- lists`) is intentionally left intact.
+fn escape_typst_code(text: &str) -> String {
+    text.replace('#', "\\#")
 }
 
 pub fn sanitize_filename(name: &str) -> String {
@@ -449,6 +462,20 @@ mod tests {
         let input = "#hello *world* `code` $math$ [block]";
         let expected = r"\#hello \*world\* \`code\` \$math\$ \[block\]";
         assert_eq!(escape_typst(input), expected);
+    }
+
+    #[test]
+    fn markdown_to_typst_escapes_typst_code_injection() {
+        let input = "#read(\"x\")\nsee #image(\"y\") inline\n## H";
+        let expected = "\\#read(\"x\")\nsee \\#image(\"y\") inline\n== H\n";
+        assert_eq!(markdown_to_typst(input), expected);
+    }
+
+    #[test]
+    fn markdown_to_typst_escapes_hash_in_heading_text() {
+        let input = "## Опыт #eval(\"1+1\")";
+        let expected = "== Опыт \\#eval(\"1+1\")\n";
+        assert_eq!(markdown_to_typst(input), expected);
     }
 
     #[test]
