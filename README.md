@@ -88,7 +88,7 @@ jobsmith setup              # Интерактивное создание про
 jobsmith search <query>     # Поиск вакансий на hh.ru
 jobsmith apply <url|id>     # AI-пайплайн: оценка → CV → письмо → PDF
 jobsmith list               # Список откликов и статусов
-jobsmith salary <company>   # Справочник зарплат
+jobsmith salary <company>   # Справочник зарплат (нужен salary_data.json, см. ниже)
 jobsmith reset              # Сброс профиля или данных
 ```
 
@@ -102,6 +102,39 @@ jobsmith reset              # Сброс профиля или данных
 | `--experience` | `noExperience` · `between1And3` · `between3And6` · `moreThan6` |
 | `--employment` | `full` · `part` · `project` · `remote` · `probation` |
 | `--schedule` | `fullDay` · `shift` · `flexible` · `remote` · `flyInFlyOut` |
+
+---
+
+## 📊 Справочник зарплат: `salary_data.json`
+
+`jobsmith salary` ищет по **локальному** файлу `salary_data.json` в каталоге данных — без него команда сообщит об ошибке:
+
+| Где лежит | Путь |
+|-----------|------|
+| macOS | `~/Library/Application Support/jobsmith/salary_data.json` |
+| Linux | `~/.local/share/jobsmith/salary_data.json` |
+| С флагом `--data-dir <dir>` | `<dir>/salary_data.json` |
+
+Схема файла (поля `metadata`, `city`, `categories` опциональны):
+
+```json
+{
+  "metadata": {
+    "index_label": "Зарплатный индекс",
+    "index_baseline": 100.0,
+    "source": "откуда данные"
+  },
+  "companies": [
+    {
+      "company": "Яндекс",
+      "city": "Москва",
+      "categories": { "senior_rust": "300000–450000 ₽" }
+    }
+  ]
+}
+```
+
+Наполняйте из любого удобного источника (внутренние бенчмарки, зарплатные опросы, выгрузки). Поиск нечувствителен к регистру, отбрасывает правовые формы («ООО», «АО», …) и понимает частичные совпадения: `jobsmith salary сбертех` найдёт «ООО СберТех».
 
 ---
 
