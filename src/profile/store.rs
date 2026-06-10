@@ -152,7 +152,9 @@ impl ProfileStore {
     pub async fn load_profile(&self) -> Result<Option<Profile>> {
         let conn = self.conn.lock().await;
         let data: Option<String> = conn
-            .query_row("SELECT data FROM profiles WHERE id = 1", [], |row| row.get(0))
+            .query_row("SELECT data FROM profiles WHERE id = 1", [], |row| {
+                row.get(0)
+            })
             .optional()
             .map_err(JobsmithError::Database)?;
 
@@ -201,11 +203,9 @@ impl ProfileStore {
     pub async fn has_profile(&self) -> Result<bool> {
         let conn = self.conn.lock().await;
         let count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM profiles WHERE id = 1",
-                [],
-                |row| row.get(0),
-            )
+            .query_row("SELECT COUNT(*) FROM profiles WHERE id = 1", [], |row| {
+                row.get(0)
+            })
             .map_err(JobsmithError::Database)?;
         Ok(count > 0)
     }

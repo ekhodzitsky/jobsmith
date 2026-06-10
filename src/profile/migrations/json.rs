@@ -27,11 +27,7 @@ impl JsonMigrationRunner {
     }
 
     /// Migrate a JSON value up to an explicit target version.
-    pub fn run_to(
-        value: Value,
-        migrations: &[JsonProfileMigration],
-        target: u32,
-    ) -> Result<Value> {
+    pub fn run_to(value: Value, migrations: &[JsonProfileMigration], target: u32) -> Result<Value> {
         let mut version = value
             .get("schema_version")
             .and_then(|v| v.as_u64())
@@ -62,13 +58,11 @@ impl JsonMigrationRunner {
 }
 
 /// Registry of all JSON profile migrations.
-pub static ALL_JSON_MIGRATIONS: &[JsonProfileMigration] = &[
-    JsonProfileMigration {
-        from_version: 0,
-        to_version: 1,
-        migrate: |mut v| {
-            v["schema_version"] = serde_json::json!(1);
-            Ok(v)
-        },
+pub static ALL_JSON_MIGRATIONS: &[JsonProfileMigration] = &[JsonProfileMigration {
+    from_version: 0,
+    to_version: 1,
+    migrate: |mut v| {
+        v["schema_version"] = serde_json::json!(1);
+        Ok(v)
     },
-];
+}];

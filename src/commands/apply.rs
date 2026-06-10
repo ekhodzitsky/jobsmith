@@ -8,15 +8,15 @@ use crate::error::{JobsmithError, Result};
 use crate::hh::client::{extract_vacancy_id, HhClient};
 use crate::profile::store::{ApplicationStatus, ProfileStore};
 use crate::templates;
-use crate::workflow::{KimiClient, WorkflowEngine};
 use crate::workflow::state::Stage;
+use crate::workflow::{KimiClient, WorkflowEngine};
 
 /// Run the apply command.
 #[instrument(skip(store, vacancy_id))]
 pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<()> {
-    let profile = store
-        .load_profile().await?
-        .ok_or_else(|| JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string()))?;
+    let profile = store.load_profile().await?.ok_or_else(|| {
+        JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string())
+    })?;
 
     let client = HhClient::new()?;
 
@@ -25,7 +25,11 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
     info!(vacancy_id = %id, "fetching vacancy");
 
     let vacancy = client.get_vacancy(&id).await?;
-    println!("\n=== {} @ {} ===\n", vacancy.base.name, vacancy.base.employer_name());
+    println!(
+        "\n=== {} @ {} ===\n",
+        vacancy.base.name,
+        vacancy.base.employer_name()
+    );
 
     let mut kimi_client = KimiClient::spawn().await?;
     let engine = WorkflowEngine::new();
@@ -46,42 +50,39 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 final_cv,
                 final_cover,
             } => {
-                let cv_typst = templates::generate_cv_typst(
-                    &profile,
-                    &vacancy,
-                    &final_cv,
-                    &output_dir,
-                )
-                .await?;
-                let cover_typst = templates::generate_cover_typst(
-                    &profile,
-                    &vacancy,
-                    &final_cover,
-                    &output_dir,
-                )
-                .await?;
+                let cv_typst =
+                    templates::generate_cv_typst(&profile, &vacancy, &final_cv, &output_dir)
+                        .await?;
+                let cover_typst =
+                    templates::generate_cover_typst(&profile, &vacancy, &final_cover, &output_dir)
+                        .await?;
 
                 let employer_safe = templates::sanitize_filename(vacancy.base.employer_name());
                 let role_safe = templates::sanitize_filename(&vacancy.base.name);
                 let id_safe = templates::sanitize_filename(&id);
                 let cv_pdf = output_dir.join(format!("cv_{}_{}.pdf", employer_safe, id_safe));
-                let cover_pdf = output_dir.join(format!("cover_{}_{}.pdf", employer_safe, role_safe));
+                let cover_pdf =
+                    output_dir.join(format!("cover_{}_{}.pdf", employer_safe, role_safe));
 
                 templates::compile_typst(&cv_typst, &cv_pdf).await?;
                 templates::compile_typst(&cover_typst, &cover_pdf).await?;
 
-                let app_id = store.record_application(
-                    &id,
-                    Some(&vacancy.base.name),
-                    Some(vacancy.base.employer_name()),
-                ).await?;
-                store.update_application_status(
-                    app_id,
-                    ApplicationStatus::Draft,
-                    Some(evaluation.score()),
-                    cv_pdf.to_str(),
-                    cover_pdf.to_str(),
-                ).await?;
+                let app_id = store
+                    .record_application(
+                        &id,
+                        Some(&vacancy.base.name),
+                        Some(vacancy.base.employer_name()),
+                    )
+                    .await?;
+                store
+                    .update_application_status(
+                        app_id,
+                        ApplicationStatus::Draft,
+                        Some(evaluation.score()),
+                        cv_pdf.to_str(),
+                        cover_pdf.to_str(),
+                    )
+                    .await?;
 
                 println!("\n✓ Application recorded (id: {}).", app_id);
                 println!("CV: {}", cv_pdf.display());
@@ -94,18 +95,22 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
                 cover_pdf_path,
                 ..
             } => {
-                let app_id = store.record_application(
-                    &id,
-                    Some(&vacancy.base.name),
-                    Some(vacancy.base.employer_name()),
-                ).await?;
-                store.update_application_status(
-                    app_id,
-                    ApplicationStatus::Draft,
-                    Some(evaluation.score()),
-                    Some(&cv_pdf_path),
-                    Some(&cover_pdf_path),
-                ).await?;
+                let app_id = store
+                    .record_application(
+                        &id,
+                        Some(&vacancy.base.name),
+                        Some(vacancy.base.employer_name()),
+                    )
+                    .await?;
+                store
+                    .update_application_status(
+                        app_id,
+                        ApplicationStatus::Draft,
+                        Some(evaluation.score()),
+                        Some(&cv_pdf_path),
+                        Some(&cover_pdf_path),
+                    )
+                    .await?;
 
                 println!("\n✓ Application recorded (id: {}).", app_id);
                 println!("CV: {}", cv_pdf_path);
@@ -121,7 +126,8 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
 
         println!("Output directory: {}", output_dir.display());
         Ok::<(), JobsmithError>(())
-    }.await;
+    }
+    .await;
 
     if let Err(e) = kimi_client.shutdown().await {
         tracing::warn!(error = %e, "kimi shutdown failed");

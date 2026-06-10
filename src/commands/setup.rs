@@ -7,9 +7,7 @@ use std::io::{self, Write};
 use tracing::{info, instrument};
 
 use crate::error::{JobsmithError, Result};
-use crate::profile::model::{
-    Education, Experience, Language, LanguageLevel, Profile, WorkPermit,
-};
+use crate::profile::model::{Education, Experience, Language, LanguageLevel, Profile, WorkPermit};
 use crate::profile::store::ProfileStore;
 use chrono::NaiveDate;
 
@@ -33,13 +31,14 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
     let telegram = read_optional("Telegram (optional): ")?;
     let website = read_optional("Website / LinkedIn (optional): ")?;
     let citizenship = read_line("Citizenship: ")?;
-    let work_permit = match read_line("Work permit (citizen/permanent/temporary/visa/none): ")?.as_str() {
-        "permanent" | "permanent_resident" => WorkPermit::PermanentResident,
-        "temporary" | "temporary_resident" => WorkPermit::TemporaryResident,
-        "visa" | "work_visa" => WorkPermit::WorkVisa,
-        "none" | "no_permit" => WorkPermit::NoPermit,
-        _ => WorkPermit::Citizen,
-    };
+    let work_permit =
+        match read_line("Work permit (citizen/permanent/temporary/visa/none): ")?.as_str() {
+            "permanent" | "permanent_resident" => WorkPermit::PermanentResident,
+            "temporary" | "temporary_resident" => WorkPermit::TemporaryResident,
+            "visa" | "work_visa" => WorkPermit::WorkVisa,
+            "none" | "no_permit" => WorkPermit::NoPermit,
+            _ => WorkPermit::Citizen,
+        };
     let ready_to_relocate = read_bool("Ready to relocate? (y/n): ")?;
     let work_format = read_optional("Preferred work format (remote/office/hybrid): ")?;
 
@@ -55,7 +54,10 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
             "a2" => LanguageLevel::A2,
             _ => LanguageLevel::A1,
         };
-        languages.push(Language { name: lang_name, level });
+        languages.push(Language {
+            name: lang_name,
+            level,
+        });
     }
 
     // Education
@@ -104,11 +106,12 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
     let target_roles = read_list("Target roles (empty line to finish):")?;
 
     // Target salary
-    let (target_salary, target_currency) = if let Some(s) = read_optional("Target salary (RUB, optional): ")? {
-        (s.parse().ok(), Some("RUR".to_string()))
-    } else {
-        (None, None)
-    };
+    let (target_salary, target_currency) =
+        if let Some(s) = read_optional("Target salary (RUB, optional): ")? {
+            (s.parse().ok(), Some("RUR".to_string()))
+        } else {
+            (None, None)
+        };
 
     // Deal breakers
     let deal_breakers = read_list("Deal breakers (empty line to finish):")?;
@@ -153,13 +156,9 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
 
 fn read_line(prompt: &str) -> Result<String> {
     print!("{}", prompt);
-    io::stdout()
-        .flush()
-        .map_err(JobsmithError::Io)?;
+    io::stdout().flush().map_err(JobsmithError::Io)?;
     let mut buf = String::new();
-    let bytes = io::stdin()
-        .read_line(&mut buf)
-        .map_err(JobsmithError::Io)?;
+    let bytes = io::stdin().read_line(&mut buf).map_err(JobsmithError::Io)?;
     if bytes == 0 {
         return Err(JobsmithError::Cancelled("EOF on stdin".to_string()));
     }

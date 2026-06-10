@@ -1,9 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Text;
-use ratatui::widgets::{
-    Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap,
-};
+use ratatui::widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap};
 use ratatui::Frame;
 
 use crate::hh::models::strip_html;
@@ -55,10 +53,9 @@ fn draw_table(f: &mut Frame, app: &App, area: Rect) {
                         .from
                         .map(|v| format!("{v}"))
                         .unwrap_or_else(|| "?".to_string());
-                    let to = s
-                        .to
-                        .map(|v| format!("{v}"))
-                        .unwrap_or_else(|| "?".to_string());
+                    let to =
+                        s.to.map(|v| format!("{v}"))
+                            .unwrap_or_else(|| "?".to_string());
                     let currency = s.currency.as_deref().unwrap_or("RUR");
                     format!("{}-{} {}", from, to, currency)
                 })
@@ -109,15 +106,15 @@ fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
         "{} vacancies | j/k or ↑/↓: navigate | Enter: details | a: apply | /: filter | q: quit",
         app.filtered.len()
     );
-    let paragraph = Paragraph::new(help)
-        .block(Block::default().borders(Borders::ALL).title("Help"));
+    let paragraph =
+        Paragraph::new(help).block(Block::default().borders(Borders::ALL).title("Help"));
     f.render_widget(paragraph, area);
 }
 
 fn draw_filter_bar(f: &mut Frame, app: &App, area: Rect) {
     let text = format!("/{}", app.filter);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("Filter"));
+    let paragraph =
+        Paragraph::new(text).block(Block::default().borders(Borders::ALL).title("Filter"));
     f.render_widget(paragraph, area);
 }
 
@@ -143,10 +140,9 @@ fn draw_detail_popup(f: &mut Frame, app: &App) {
                     .from
                     .map(|v| format!("{v}"))
                     .unwrap_or_else(|| "?".to_string());
-                let to = s
-                    .to
-                    .map(|v| format!("{v}"))
-                    .unwrap_or_else(|| "?".to_string());
+                let to =
+                    s.to.map(|v| format!("{v}"))
+                        .unwrap_or_else(|| "?".to_string());
                 let currency = s.currency.as_deref().unwrap_or("RUR");
                 format!("{}-{} {}", from, to, currency)
             })

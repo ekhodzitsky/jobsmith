@@ -33,7 +33,12 @@ pub fn build_fit_evaluation_prompt(profile: &Profile, vacancy: &VacancyDetail) -
         .base
         .key_skills
         .as_ref()
-        .map(|s| s.iter().filter_map(|k| k.name.clone()).collect::<Vec<_>>().join(", "))
+        .map(|s| {
+            s.iter()
+                .filter_map(|k| k.name.clone())
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
         .unwrap_or_default();
 
     let salary = vacancy
@@ -41,8 +46,13 @@ pub fn build_fit_evaluation_prompt(profile: &Profile, vacancy: &VacancyDetail) -
         .salary
         .as_ref()
         .map(|s| {
-            let from = s.from.map(|v| v.to_string()).unwrap_or_else(|| "?".to_string());
-            let to = s.to.map(|v| v.to_string()).unwrap_or_else(|| "?".to_string());
+            let from = s
+                .from
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "?".to_string());
+            let to =
+                s.to.map(|v| v.to_string())
+                    .unwrap_or_else(|| "?".to_string());
             let currency = s.currency.as_deref().unwrap_or("RUR");
             format!("{from} - {to} {currency}")
         })
@@ -128,10 +138,17 @@ STRENGTHS: <что выделяет кандидата>
         target_roles = profile.target_roles.join(", "),
         target_salary = profile
             .target_salary
-            .map(|s| format!("{s} {}", profile.target_currency.as_deref().unwrap_or("RUR")))
+            .map(|s| format!(
+                "{s} {}",
+                profile.target_currency.as_deref().unwrap_or("RUR")
+            ))
             .unwrap_or_else(|| "не указана".to_string()),
         work_format = profile.work_format.as_deref().unwrap_or("не указан"),
-        relocate = if profile.ready_to_relocate { "да" } else { "нет" },
+        relocate = if profile.ready_to_relocate {
+            "да"
+        } else {
+            "нет"
+        },
         experience_text = format_experience(profile),
         education_text = format_education(profile),
         company = vacancy.base.employer_name(),
@@ -531,7 +548,12 @@ fn build_compact_profile_summary(profile: &Profile) -> String {
 
     let target_salary = profile
         .target_salary
-        .map(|s| format!("{s} {}", profile.target_currency.as_deref().unwrap_or("RUR")))
+        .map(|s| {
+            format!(
+                "{s} {}",
+                profile.target_currency.as_deref().unwrap_or("RUR")
+            )
+        })
         .unwrap_or_else(|| "не указана".to_string());
 
     let summary = format!(
@@ -565,7 +587,10 @@ fn truncate(s: &str, max_chars: usize) -> String {
     if char_count <= max_chars {
         s.to_string()
     } else {
-        let truncated: String = s.chars().take(max_chars.saturating_sub(TRUNCATE_SUFFIX_MARGIN)).collect();
+        let truncated: String = s
+            .chars()
+            .take(max_chars.saturating_sub(TRUNCATE_SUFFIX_MARGIN))
+            .collect();
         format!("{truncated}... [truncated]")
     }
 }

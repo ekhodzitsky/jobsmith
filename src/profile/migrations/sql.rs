@@ -38,12 +38,11 @@ impl MigrationRunner {
         for migration in migrations {
             if migration.version > current {
                 let tx = conn.transaction().map_err(JobsmithError::Database)?;
-                tx.execute_batch(migration.sql).map_err(|e| {
-                    JobsmithError::Migration {
+                tx.execute_batch(migration.sql)
+                    .map_err(|e| JobsmithError::Migration {
                         version: migration.version,
                         source: e.to_string(),
-                    }
-                })?;
+                    })?;
                 tx.execute(
                     "INSERT INTO _schema_migrations(version) VALUES (?1)",
                     rusqlite::params![migration.version],

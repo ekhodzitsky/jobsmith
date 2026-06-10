@@ -49,11 +49,12 @@ pub async fn compile_typst(input_path: &Path, output_path: &Path) -> Result<()> 
         .stderr(Stdio::piped())
         .kill_on_drop(true);
 
-    let result = timeout(TYPST_TIMEOUT, cmd.output())
-        .await
-        .map_err(|_| JobsmithError::ProcessTimeout {
-            duration_secs: TYPST_TIMEOUT.as_secs(),
-        })?;
+    let result =
+        timeout(TYPST_TIMEOUT, cmd.output())
+            .await
+            .map_err(|_| JobsmithError::ProcessTimeout {
+                duration_secs: TYPST_TIMEOUT.as_secs(),
+            })?;
 
     let output = result.map_err(|e| JobsmithError::Process(format!("typst: {e}")))?;
 
@@ -80,10 +81,7 @@ pub async fn generate_cv_typst(
     cv_content: &str,
     output_dir: &Path,
 ) -> Result<PathBuf> {
-    let file_name = format!(
-        "cv_{}.typ",
-        sanitize_filename(vacancy.base.employer_name())
-    );
+    let file_name = format!("cv_{}.typ", sanitize_filename(vacancy.base.employer_name()));
     let output_path = output_dir.join(&file_name);
 
     let template = load_template(CV_TEMPLATE_PATH, CV_TEMPLATE_EMBEDDED).await?;
@@ -254,10 +252,7 @@ fn build_experience_block(profile: &Profile) -> String {
             let tech = if e.technologies.is_empty() {
                 String::new()
             } else {
-                format!(
-                    "Технологии: {}",
-                    escape_typst(&e.technologies.join(", "))
-                )
+                format!("Технологии: {}", escape_typst(&e.technologies.join(", ")))
             };
 
             let mut parts: Vec<String> = vec![header, period];
@@ -312,17 +307,8 @@ fn build_education_block(profile: &Profile) -> String {
             let desc = e.description.as_deref().unwrap_or("");
 
             let mut parts = vec![
-                format!(
-                    "*{}* — {}",
-                    escape_typst(&e.degree),
-                    escape_typst(&e.field)
-                ),
-                format!(
-                    "{} | {} — {}",
-                    escape_typst(&e.institution),
-                    start,
-                    end
-                ),
+                format!("*{}* — {}", escape_typst(&e.degree), escape_typst(&e.field)),
+                format!("{} | {} — {}", escape_typst(&e.institution), start, end),
             ];
             if !desc.is_empty() {
                 parts.push(escape_typst(desc));
@@ -392,8 +378,8 @@ fn escape_typst(text: &str) -> String {
     for c in text.chars() {
         match c {
             '\\' => result.push_str("\\\\"),
-            '#' | '*' | '_' | '`' | '$' | '@' | '~' | '^' | '&' | '<' | '>' | '"' | '['
-            | ']' | '{' | '}' => {
+            '#' | '*' | '_' | '`' | '$' | '@' | '~' | '^' | '&' | '<' | '>' | '"' | '[' | ']'
+            | '{' | '}' => {
                 result.push('\\');
                 result.push(c);
             }
@@ -430,7 +416,13 @@ fn markdown_to_typst(text: &str) -> String {
 
 pub fn sanitize_filename(name: &str) -> String {
     name.chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>()
         .to_lowercase()
 }

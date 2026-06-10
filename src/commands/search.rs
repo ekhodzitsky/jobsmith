@@ -6,7 +6,7 @@ use tracing::{info, instrument};
 
 use crate::error::{JobsmithError, Result};
 use crate::hh::client::HhClient;
-use crate::hh::models::{VacancySearchQuery, strip_html};
+use crate::hh::models::{strip_html, VacancySearchQuery};
 use crate::profile::store::ProfileStore;
 use crate::tui;
 
@@ -28,9 +28,7 @@ pub async fn run(
             tui::Action::Apply(id) => {
                 let db_path = data_dir
                     .ok_or_else(|| {
-                        JobsmithError::Config(
-                            "data directory required for apply".to_string(),
-                        )
+                        JobsmithError::Config("data directory required for apply".to_string())
                     })?
                     .join("jobsmith.db");
                 let store = ProfileStore::open(&db_path).await?;
@@ -55,10 +53,9 @@ pub async fn run(
                         .from
                         .map(|v| format!("{v}"))
                         .unwrap_or_else(|| "?".to_string());
-                    let to = s
-                        .to
-                        .map(|v| format!("{v}"))
-                        .unwrap_or_else(|| "?".to_string());
+                    let to =
+                        s.to.map(|v| format!("{v}"))
+                            .unwrap_or_else(|| "?".to_string());
                     let currency = s.currency.as_deref().unwrap_or("RUR");
                     format!("{} — {} {}", from, to, currency)
                 })

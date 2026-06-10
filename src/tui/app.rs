@@ -133,8 +133,7 @@ impl App {
             }
             KeyCode::Char('j') | KeyCode::Down => {
                 if !self.filtered.is_empty() {
-                    self.selected =
-                        (self.selected + 1).min(self.filtered.len().saturating_sub(1));
+                    self.selected = (self.selected + 1).min(self.filtered.len().saturating_sub(1));
                 }
                 None
             }

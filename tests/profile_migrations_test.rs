@@ -27,11 +27,9 @@ fn test_sql_migration_applies_pending() {
     MigrationRunner::run(&mut conn, migrations).unwrap();
 
     let count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM _schema_migrations",
-            [],
-            |row| row.get(0),
-        )
+        .query_row("SELECT COUNT(*) FROM _schema_migrations", [], |row| {
+            row.get(0)
+        })
         .unwrap();
     assert_eq!(count, 2);
 }
@@ -157,12 +155,20 @@ async fn test_load_profile_auto_migrates_v0_to_v1() {
     store.insert_raw_profile(&legacy_json).await.unwrap();
 
     // Load should auto-migrate and return a valid Profile.
-    let profile = store.load_profile().await.unwrap().expect("profile should exist");
+    let profile = store
+        .load_profile()
+        .await
+        .unwrap()
+        .expect("profile should exist");
     assert_eq!(profile.schema_version, CURRENT_PROFILE_SCHEMA);
     assert_eq!(profile.name, Profile::default().name);
 
     // Second load should be a no-op (already migrated).
-    let profile2 = store.load_profile().await.unwrap().expect("profile should exist");
+    let profile2 = store
+        .load_profile()
+        .await
+        .unwrap()
+        .expect("profile should exist");
     assert_eq!(profile2.schema_version, CURRENT_PROFILE_SCHEMA);
 }
 
@@ -179,6 +185,10 @@ async fn test_save_profile_sets_schema_version() {
     };
     store.save_profile(&profile).await.unwrap();
 
-    let loaded = store.load_profile().await.unwrap().expect("profile should exist");
+    let loaded = store
+        .load_profile()
+        .await
+        .unwrap()
+        .expect("profile should exist");
     assert_eq!(loaded.schema_version, CURRENT_PROFILE_SCHEMA);
 }

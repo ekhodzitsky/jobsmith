@@ -79,7 +79,10 @@ pub struct Vacancy {
 impl Vacancy {
     /// Return the employer name, or "Unknown" if not present.
     pub fn employer_name(&self) -> &str {
-        self.employer.as_ref().map(|e| e.name.as_str()).unwrap_or("Unknown")
+        self.employer
+            .as_ref()
+            .map(|e| e.name.as_str())
+            .unwrap_or("Unknown")
     }
 }
 
@@ -371,11 +374,7 @@ pub fn strip_html(html: &str) -> String {
     use scraper::Html;
     let fragment = Html::parse_fragment(html);
 
-    let text = fragment
-        .root_element()
-        .text()
-        .collect::<Vec<_>>()
-        .join(" ");
+    let text = fragment.root_element().text().collect::<Vec<_>>().join(" ");
 
     text.replace(['\n', '\r'], " ")
         .split_whitespace()

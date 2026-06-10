@@ -107,11 +107,7 @@ impl Stage {
     }
 
     /// Transition from EvaluateFit to DraftCv.
-    pub fn into_draft_cv(
-        self,
-        evaluation: FitScore,
-        evaluation_text: String,
-    ) -> Result<Self> {
+    pub fn into_draft_cv(self, evaluation: FitScore, evaluation_text: String) -> Result<Self> {
         match self {
             Stage::EvaluateFit { vacancy, profile } => {
                 if !evaluation.is_acceptable() {
@@ -260,8 +256,10 @@ impl WorkflowEngine {
             stage = match stage {
                 Stage::EvaluateFit { vacancy, profile } => {
                     if force {
-                        Stage::EvaluateFit { vacancy, profile }
-                            .into_draft_cv(FitScore::new(100)?, "forced: skipping evaluation".to_string())?
+                        Stage::EvaluateFit { vacancy, profile }.into_draft_cv(
+                            FitScore::new(100)?,
+                            "forced: skipping evaluation".to_string(),
+                        )?
                     } else {
                         let (score, evaluation_text) =
                             client.evaluate_fit(&profile, &vacancy).await?;
@@ -275,8 +273,9 @@ impl WorkflowEngine {
                     evaluation,
                     evaluation_text,
                 } => {
-                    let (cv_draft, cover_draft) =
-                        client.draft_cv(&profile, &vacancy, &evaluation_text).await?;
+                    let (cv_draft, cover_draft) = client
+                        .draft_cv(&profile, &vacancy, &evaluation_text)
+                        .await?;
                     Stage::DraftCv {
                         vacancy,
                         profile,

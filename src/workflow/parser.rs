@@ -31,8 +31,7 @@ const REASONING_TERMINATORS: &[&str] = &[
 ];
 
 static SCORE_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
-    Regex::new(r"(?im)^SCORE:\s*(\d+)")
-        .map_err(|e| format!("invalid regex: {e}"))
+    Regex::new(r"(?im)^SCORE:\s*(\d+)").map_err(|e| format!("invalid regex: {e}"))
 });
 
 static VERDICT_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
@@ -40,10 +39,8 @@ static VERDICT_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(
         .map_err(|e| format!("invalid regex: {e}"))
 });
 
-static REASONING_START_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
-    Regex::new(r"(?im)^REASONING:\s*")
-        .map_err(|e| format!("invalid regex: {e}"))
-});
+static REASONING_START_RE: LazyLock<std::result::Result<Regex, String>> =
+    LazyLock::new(|| Regex::new(r"(?im)^REASONING:\s*").map_err(|e| format!("invalid regex: {e}")));
 
 static REASONING_END_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock::new(|| {
     let pattern = REASONING_TERMINATORS
@@ -83,7 +80,9 @@ pub fn parse_evaluation(text: &str) -> Result<Evaluation> {
         .captures(text)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_lowercase())
-        .ok_or_else(|| JobsmithError::Process("failed to parse VERDICT from response".to_string()))?;
+        .ok_or_else(|| {
+            JobsmithError::Process("failed to parse VERDICT from response".to_string())
+        })?;
 
     let reasoning = extract_reasoning(text)?;
 
@@ -121,7 +120,9 @@ pub fn parse_revised(text: &str) -> Result<(String, String)> {
     let cv_start = text
         .find(cv_marker)
         .map(|i| i + cv_marker.len())
-        .ok_or_else(|| JobsmithError::Process("failed to parse CV from revision response".to_string()))?;
+        .ok_or_else(|| {
+            JobsmithError::Process("failed to parse CV from revision response".to_string())
+        })?;
 
     let cover_pos = text.find(cover_marker);
 

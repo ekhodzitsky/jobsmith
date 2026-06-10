@@ -6,7 +6,9 @@ use reqwest::{Client, ClientBuilder, StatusCode};
 use tracing::{instrument, trace};
 
 use crate::error::{JobsmithError, Result};
-use crate::hh::models::{SalaryStatisticsResponse, VacanciesResponse, VacancyDetail, VacancySearchQuery};
+use crate::hh::models::{
+    SalaryStatisticsResponse, VacanciesResponse, VacancyDetail, VacancySearchQuery,
+};
 
 /// Compute a delay with jitter for retry backoff.
 ///
@@ -19,7 +21,8 @@ fn backoff_with_jitter(attempt: u32) -> Duration {
     let jitter_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
-        .as_nanos() as u64 % 500;
+        .as_nanos() as u64
+        % 500;
     base + Duration::from_millis(jitter_ms)
 }
 
@@ -149,8 +152,7 @@ impl HhClient {
     pub async fn search_vacancies(&self, query: &VacancySearchQuery) -> Result<VacanciesResponse> {
         let url = format!("{}/vacancies", self.base_url);
         let params = query.to_params();
-        let param_refs: Vec<(&str, &str)> =
-            params.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let param_refs: Vec<(&str, &str)> = params.iter().map(|(k, v)| (*k, v.as_str())).collect();
 
         trace!("sending hh api request");
         let response = self
