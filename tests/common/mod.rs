@@ -133,7 +133,6 @@ pub fn dummy_vacancy() -> Vacancy {
         working_time_modes: None,
         accept_temporary: None,
         professional_roles: None,
-        extra: serde_json::Value::Object(Default::default()),
     }
 }
 
@@ -214,5 +213,56 @@ impl WorkflowClient for MockKimiClient {
         _review: &'a str,
     ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
         async move { Ok((self.final_cv.clone(), self.final_cover.clone())) }
+    }
+}
+
+/// Mock whose responses are RAW markdown routed through the real parsers,
+/// unlike `MockKimiClient`, which returns pre-parsed values.
+#[allow(dead_code)]
+pub struct RawMarkdownMockClient {
+    pub evaluation_markdown: String,
+    pub revision_markdown: String,
+}
+
+#[allow(clippy::manual_async_fn)]
+impl WorkflowClient for RawMarkdownMockClient {
+    fn evaluate_fit<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+    ) -> impl std::future::Future<Output = Result<(FitScore, String)>> + 'a {
+        async move {
+            let eval = jobsmith::workflow::parser::parse_evaluation(&self.evaluation_markdown)?;
+            Ok((FitScore::new(eval.score)?, self.evaluation_markdown.clone()))
+        }
+    }
+
+    fn draft_cv<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+        _evaluation_text: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { Ok(("draft cv".to_string(), "draft cover".to_string())) }
+    }
+
+    fn review<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+        _cv_draft: &'a str,
+        _cover_draft: &'a str,
+    ) -> impl std::future::Future<Output = Result<String>> + 'a {
+        async move { Ok("CRITIQUE: tighten the summary".to_string()) }
+    }
+
+    fn revise<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _cv_draft: &'a str,
+        _cover_draft: &'a str,
+        _review: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { jobsmith::workflow::parser::parse_revised(&self.revision_markdown) }
     }
 }

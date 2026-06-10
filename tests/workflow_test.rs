@@ -162,3 +162,49 @@ async fn workflow_run_low_score_stops_early() {
     let err = engine.run(stage, &mut client, false).await.unwrap_err();
     assert!(matches!(err, JobsmithError::FitScoreTooLow { .. }));
 }
+
+#[tokio::test]
+async fn run_parses_raw_markdown_through_real_parsers() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+    let mut client = common::RawMarkdownMockClient {
+        evaluation_markdown: "SCORE: 82\nVERDICT: accept\nREASONING: ok\n".to_string(),
+        revision_markdown: "---CV---\nFinal CV body\n---COVER---\nFinal cover body\n".to_string(),
+    };
+
+    let engine = WorkflowEngine::new();
+    let stage = engine.start(vacancy, profile);
+    let final_stage = engine.run(stage, &mut client, false).await.unwrap();
+
+    match final_stage {
+        Stage::CompilePdf {
+            evaluation,
+            final_cv,
+            final_cover,
+            ..
+        } => {
+            assert_eq!(evaluation.score(), 82);
+            assert_eq!(final_cv, "Final CV body");
+            assert_eq!(final_cover, "Final cover body");
+        }
+        other => panic!("expected compile_pdf, got {}", other.name()),
+    }
+}
+
+#[tokio::test]
+async fn run_surfaces_parse_failure_from_raw_markdown() {
+    let vacancy = common::dummy_vacancy_detail();
+    let profile = common::dummy_profile();
+    let mut client = common::RawMarkdownMockClient {
+        evaluation_markdown: "no structured fields here".to_string(),
+        revision_markdown: String::new(),
+    };
+
+    let engine = WorkflowEngine::new();
+    let stage = engine.start(vacancy, profile);
+    let err = engine.run(stage, &mut client, false).await.unwrap_err();
+    assert!(
+        matches!(err, JobsmithError::ResponseParse(_)),
+        "expected ResponseParse, got {err:?}"
+    );
+}

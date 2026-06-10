@@ -103,6 +103,7 @@ fn test_json_migration_chain() {
             from_version: 1,
             to_version: 2,
             migrate: |mut v| {
+                v["schema_version"] = serde_json::json!(2);
                 v["new_field"] = serde_json::json!("migrated");
                 Ok(v)
             },
@@ -110,7 +111,8 @@ fn test_json_migration_chain() {
     ];
     let value = serde_json::json!({ "name": "Bob" });
     let migrated = JsonMigrationRunner::run_to(value, migrations, 2).unwrap();
-    assert_eq!(migrated["schema_version"], 1);
+    // The runner must have walked the whole chain to the target version.
+    assert_eq!(migrated["schema_version"], 2);
     assert_eq!(migrated["new_field"], "migrated");
 }
 
