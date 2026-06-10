@@ -95,7 +95,7 @@ async fn run() -> Result<(), JobsmithError> {
                     return Err(e);
                 }
             };
-            apply::run(&store, &vacancy, force).await
+            apply::run(&store, &vacancy, force, &data_dir).await
         }
         Commands::List { detailed } => {
             let store = match ProfileStore::open(&db_path).await {

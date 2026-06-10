@@ -26,13 +26,11 @@ pub async fn run(
         let mut app = tui::App::new(response.items)?;
         match app.run().await? {
             tui::Action::Apply(id) => {
-                let db_path = data_dir
-                    .ok_or_else(|| {
-                        JobsmithError::Config("data directory required for apply".to_string())
-                    })?
-                    .join("jobsmith.db");
-                let store = ProfileStore::open(&db_path).await?;
-                crate::commands::apply::run(&store, &id, false).await
+                let data_dir = data_dir.ok_or_else(|| {
+                    JobsmithError::Config("data directory required for apply".to_string())
+                })?;
+                let store = ProfileStore::open(&data_dir.join("jobsmith.db")).await?;
+                crate::commands::apply::run(&store, &id, false, data_dir).await
             }
             tui::Action::Quit => Ok(()),
         }

@@ -491,6 +491,20 @@ mod tests {
         assert_eq!(sanitize_filename("foo-bar_baz"), "foo-bar_baz");
     }
 
+    #[tokio::test]
+    async fn ensure_output_dir_creates_exactly_base_output() {
+        let base = std::env::temp_dir().join(format!("jobsmith-outdir-{}", std::process::id()));
+        let dir = ensure_output_dir(&base).await.unwrap();
+        assert_eq!(dir, base.join("output"));
+        assert!(dir.is_dir());
+        assert!(
+            !dir.join("output").exists(),
+            "must not create a nested output/output"
+        );
+        // best-effort cleanup of the temp dir
+        let _ = tokio::fs::remove_dir_all(&base).await;
+    }
+
     #[test]
     fn build_contact_block_includes_optional_fields() {
         let profile = Profile {

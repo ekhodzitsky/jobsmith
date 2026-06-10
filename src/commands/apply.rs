@@ -1,6 +1,6 @@
 //! Apply command — run the full AI workflow for a vacancy.
 
-use std::path::PathBuf;
+use std::path::Path;
 
 use tracing::{info, instrument};
 
@@ -12,8 +12,16 @@ use crate::workflow::state::Stage;
 use crate::workflow::{KimiClient, WorkflowEngine};
 
 /// Run the apply command.
-#[instrument(skip(store, vacancy_id))]
-pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<()> {
+///
+/// `data_dir` is the same root the caller opened the database in, so
+/// generated documents land next to it (honours `--data-dir`).
+#[instrument(skip(store, vacancy_id, data_dir))]
+pub async fn run(
+    store: &ProfileStore,
+    vacancy_id: &str,
+    force: bool,
+    data_dir: &Path,
+) -> Result<()> {
     let profile = store.load_profile().await?.ok_or_else(|| {
         JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string())
     })?;
@@ -38,8 +46,7 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
     println!("Running application workflow...\n");
     let final_stage = engine.run(stage, &mut kimi_client, force).await?;
 
-    let output_dir = get_data_dir()?.join("output");
-    templates::ensure_output_dir(&output_dir).await?;
+    let output_dir = templates::ensure_output_dir(data_dir).await?;
 
     let workflow_result = async {
         match final_stage {
@@ -133,10 +140,4 @@ pub async fn run(store: &ProfileStore, vacancy_id: &str, force: bool) -> Result<
         tracing::warn!(error = %e, "kimi shutdown failed");
     }
     workflow_result
-}
-
-fn get_data_dir() -> Result<PathBuf> {
-    dirs::data_dir()
-        .map(|d| d.join("jobsmith"))
-        .ok_or_else(|| JobsmithError::Config("could not determine data directory".to_string()))
 }
