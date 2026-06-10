@@ -125,7 +125,10 @@ impl ProfileStore {
     /// Save or update the candidate profile.
     #[instrument(skip(self, profile))]
     pub async fn save_profile(&self, profile: &Profile) -> Result<()> {
-        let data = serde_json::to_string(profile).map_err(JobsmithError::Json)?;
+        let mut value = serde_json::to_value(profile).map_err(JobsmithError::Json)?;
+        value["schema_version"] =
+            serde_json::json!(crate::profile::migrations::json::CURRENT_PROFILE_SCHEMA);
+        let data = serde_json::to_string(&value).map_err(JobsmithError::Json)?;
 
         let conn = self.conn.lock().await;
         conn.execute(
@@ -144,7 +147,7 @@ impl ProfileStore {
         Ok(())
     }
 
-    /// Load the candidate profile.
+    /// Load the candidate profile, applying JSON migrations automatically.
     #[instrument(skip(self))]
     pub async fn load_profile(&self) -> Result<Option<Profile>> {
         let conn = self.conn.lock().await;
@@ -155,7 +158,38 @@ impl ProfileStore {
 
         match data {
             Some(json) => {
-                let profile = serde_json::from_str(&json).map_err(JobsmithError::Json)?;
+                let value: serde_json::Value =
+                    serde_json::from_str(&json).map_err(JobsmithError::Json)?;
+
+                let original_version = value
+                    .get("schema_version")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as u32)
+                    .unwrap_or(0);
+
+                let migrated = crate::profile::migrations::json::JsonMigrationRunner::run(
+                    value,
+                    crate::profile::migrations::json::ALL_JSON_MIGRATIONS,
+                )?;
+
+                let new_version = migrated
+                    .get("schema_version")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as u32)
+                    .unwrap_or(0);
+
+                // Persist migrated JSON immediately while still holding the lock.
+                if new_version != original_version {
+                    let updated_json =
+                        serde_json::to_string(&migrated).map_err(JobsmithError::Json)?;
+                    conn.execute(
+                        "UPDATE profiles SET data = ?1, updated_at = datetime('now') WHERE id = 1",
+                        rusqlite::params![updated_json],
+                    )
+                    .map_err(JobsmithError::Database)?;
+                }
+
+                let profile = serde_json::from_value(migrated).map_err(JobsmithError::Json)?;
                 debug!("profile loaded");
                 Ok(Some(profile))
             }
@@ -260,6 +294,21 @@ impl ProfileStore {
 
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(JobsmithError::Database)
+    }
+}
+
+#[cfg(test)]
+impl ProfileStore {
+    /// Insert a raw JSON profile bypassing serialization (for migration tests).
+    pub async fn insert_raw_profile(&self, json: &str) -> Result<()> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT INTO profiles (id, data, updated_at) VALUES (1, ?1, datetime('now'))
+             ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+            rusqlite::params![json],
+        )
+        .map_err(JobsmithError::Database)?;
+        Ok(())
     }
 }
 
