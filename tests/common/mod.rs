@@ -1,9 +1,13 @@
 use chrono::NaiveDate;
+use jobsmith::error::Result;
 use jobsmith::hh::models::*;
 use jobsmith::profile::model::*;
+use jobsmith::workflow::client::WorkflowClient;
+use jobsmith::workflow::state::FitScore;
 
 pub fn dummy_profile() -> Profile {
     Profile {
+        schema_version: CURRENT_PROFILE_SCHEMA,
         name: "Иван Иванов".to_string(),
         city: "Москва".to_string(),
         phone: "+79991234567".to_string(),
@@ -144,5 +148,71 @@ pub fn dummy_vacancy_detail() -> VacancyDetail {
         response_letter_required: None,
         relocation: None,
         request_id: None,
+    }
+}
+
+/// Mock AI client for workflow testing.
+#[allow(dead_code)]
+pub struct MockKimiClient {
+    pub fit_score: i32,
+    pub evaluation_text: String,
+    pub cv_draft: String,
+    pub cover_draft: String,
+    pub review_text: String,
+    pub final_cv: String,
+    pub final_cover: String,
+}
+
+impl Default for MockKimiClient {
+    fn default() -> Self {
+        Self {
+            fit_score: 75,
+            evaluation_text: "Good fit".to_string(),
+            cv_draft: "# CV\n\nExperience...".to_string(),
+            cover_draft: "Dear Hiring Manager...".to_string(),
+            review_text: "Looks good, minor fixes".to_string(),
+            final_cv: "# Final CV\n\nPolished...".to_string(),
+            final_cover: "Dear Hiring Manager, polished...".to_string(),
+        }
+    }
+}
+
+#[allow(clippy::manual_async_fn)]
+impl WorkflowClient for MockKimiClient {
+    fn evaluate_fit<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+    ) -> impl std::future::Future<Output = Result<(FitScore, String)>> + 'a {
+        async move { Ok((FitScore::new(self.fit_score)?, self.evaluation_text.clone())) }
+    }
+
+    fn draft_cv<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+        _evaluation_text: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { Ok((self.cv_draft.clone(), self.cover_draft.clone())) }
+    }
+
+    fn review<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _vacancy: &'a VacancyDetail,
+        _cv_draft: &'a str,
+        _cover_draft: &'a str,
+    ) -> impl std::future::Future<Output = Result<String>> + 'a {
+        async move { Ok(self.review_text.clone()) }
+    }
+
+    fn revise<'a>(
+        &'a mut self,
+        _profile: &'a Profile,
+        _cv_draft: &'a str,
+        _cover_draft: &'a str,
+        _review: &'a str,
+    ) -> impl std::future::Future<Output = Result<(String, String)>> + 'a {
+        async move { Ok((self.final_cv.clone(), self.final_cover.clone())) }
     }
 }

@@ -3,9 +3,18 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
+pub const CURRENT_PROFILE_SCHEMA: u32 = 1;
+
+fn default_schema_version() -> u32 {
+    CURRENT_PROFILE_SCHEMA
+}
+
 /// Full candidate profile.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
+    /// JSON schema version for automatic migrations.
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u32,
     /// Full name.
     pub name: String,
     /// City / location.
@@ -145,6 +154,40 @@ pub struct StarStory {
     pub action: String,
     pub result: String,
     pub tags: Vec<String>,
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Self {
+            schema_version: CURRENT_PROFILE_SCHEMA,
+            name: String::new(),
+            city: String::new(),
+            phone: String::new(),
+            email: String::new(),
+            telegram: None,
+            website: None,
+            citizenship: String::new(),
+            work_permit: WorkPermit::default(),
+            military_status: None,
+            languages: Vec::new(),
+            education: Vec::new(),
+            experience: Vec::new(),
+            skills: Vec::new(),
+            soft_skills: Vec::new(),
+            certifications: Vec::new(),
+            summary: String::new(),
+            target_roles: Vec::new(),
+            target_salary: None,
+            target_currency: None,
+            ready_to_relocate: false,
+            work_format: None,
+            star_stories: Vec::new(),
+            publications: Vec::new(),
+            deal_breakers: Vec::new(),
+            motivations: Vec::new(),
+            ideal_environment: String::new(),
+        }
+    }
 }
 
 impl Profile {
