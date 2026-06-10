@@ -26,6 +26,26 @@ fn backoff_with_jitter(attempt: u32) -> Duration {
     base + Duration::from_millis(jitter_ms)
 }
 
+/// Parse a `Retry-After` header (delay-seconds form; HTTP-date is ignored).
+fn parse_retry_after(response: &reqwest::Response) -> Option<Duration> {
+    response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim()
+        .parse::<u64>()
+        .ok()
+        .map(Duration::from_secs)
+}
+
+/// Delay before retry `attempt`; a server-provided `Retry-After` wins
+/// when it is longer than the local backoff.
+fn retry_delay(attempt: u32, retry_after: Option<Duration>) -> Duration {
+    let backoff = backoff_with_jitter(attempt);
+    retry_after.map_or(backoff, |ra| ra.max(backoff))
+}
+
 /// Base URL for the HeadHunter API.
 const HH_API_BASE: &str = "https://api.hh.ru";
 
@@ -92,10 +112,11 @@ impl HhClient {
         params: Option<&[(&str, &str)]>,
     ) -> Result<reqwest::Response> {
         let mut last_error: Option<JobsmithError> = None;
+        let mut retry_after: Option<Duration> = None;
 
         for attempt in 0..=HH_API_MAX_RETRIES {
             if attempt > 0 {
-                tokio::time::sleep(backoff_with_jitter(attempt)).await;
+                tokio::time::sleep(retry_delay(attempt, retry_after.take())).await;
             }
 
             let mut request = self.client.request(method.clone(), url);
@@ -113,6 +134,7 @@ impl HhClient {
                         || status == StatusCode::INTERNAL_SERVER_ERROR
                         || status == StatusCode::SERVICE_UNAVAILABLE
                     {
+                        retry_after = parse_retry_after(&response);
                         last_error = Some(JobsmithError::HhApiStatus {
                             status: status.as_u16(),
                             message: "server indicated retry".to_string(),
@@ -227,5 +249,22 @@ pub fn extract_vacancy_id(input: &str) -> Result<String> {
         Ok(id)
     } else {
         Err(JobsmithError::InvalidVacancyId(id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retry_delay_honours_longer_retry_after() {
+        assert!(retry_delay(1, Some(Duration::from_secs(7))) >= Duration::from_secs(7));
+    }
+
+    #[test]
+    fn retry_delay_keeps_backoff_when_retry_after_is_shorter() {
+        // backoff_with_jitter(1) is at least 1s, (2) at least 2s
+        assert!(retry_delay(1, Some(Duration::from_millis(1))) >= Duration::from_secs(1));
+        assert!(retry_delay(2, None) >= Duration::from_secs(2));
     }
 }
