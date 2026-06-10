@@ -48,7 +48,9 @@ static REASONING_END_RE: LazyLock<std::result::Result<Regex, String>> = LazyLock
         .map(|t| regex::escape(t))
         .collect::<Vec<_>>()
         .join("|");
-    RegexBuilder::new(&format!("(?i){}", pattern))
+    // Anchored like the sibling patterns: a terminator only counts at the
+    // start of a line, not as a substring inside the reasoning text.
+    RegexBuilder::new(&format!("(?im)^(?:{})", pattern))
         .build()
         .map_err(|e| format!("invalid regex: {e}"))
 });
@@ -167,6 +169,23 @@ STRENGTHS: Rust experience
         assert_eq!(eval.score, 75);
         assert_eq!(eval.verdict, "accept");
         assert!(eval.reasoning.contains("Great fit"));
+        Ok(())
+    }
+
+    #[test]
+    fn reasoning_keeps_inline_terminator_mentions() -> Result<()> {
+        let text = "SCORE: 80\nVERDICT: accept\nREASONING: closes GAPS: in test coverage\nand more.\nSTRENGTHS: Rust\n";
+        let eval = parse_evaluation(text)?;
+        assert!(
+            eval.reasoning.contains("closes GAPS: in test coverage"),
+            "mid-line terminator mention must not cut reasoning: {:?}",
+            eval.reasoning
+        );
+        assert!(
+            !eval.reasoning.contains("STRENGTHS"),
+            "line-start terminator must still cut: {:?}",
+            eval.reasoning
+        );
         Ok(())
     }
 
