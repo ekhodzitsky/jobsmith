@@ -45,6 +45,16 @@ async fn run() -> Result<(), JobsmithError> {
         error!(error = %e, "failed to create data directory");
         return Err(JobsmithError::Io(e));
     }
+    // The directory holds the PII database and generated documents.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Err(e) = std::fs::set_permissions(&data_dir, std::fs::Permissions::from_mode(0o700))
+        {
+            error!(error = %e, "failed to restrict data directory permissions");
+            return Err(JobsmithError::Io(e));
+        }
+    }
 
     let db_path = data_dir.join("jobsmith.db");
 

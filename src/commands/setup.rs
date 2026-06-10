@@ -21,6 +21,20 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
         )));
     }
 
+    // The wizard reads stdin with blocking I/O; keep it off the async runtime.
+    let profile = tokio::task::spawn_blocking(collect_profile)
+        .await
+        .map_err(|e| JobsmithError::Process(format!("setup wizard task failed: {e}")))??;
+
+    profile.validate()?;
+    store.save_profile(&profile).await?;
+
+    println!("\n✓ Profile saved successfully.");
+    Ok(())
+}
+
+/// Interactively collect a profile from stdin (blocking).
+fn collect_profile() -> Result<Profile> {
     println!("\n=== Jobsmith Profile Setup ===\n");
     println!("Enter your profile information. Press Enter to skip optional fields.\n");
 
@@ -121,7 +135,7 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
 
     let ideal_environment = read_line("Describe your ideal work environment: ")?;
 
-    let profile = Profile {
+    Ok(Profile {
         name,
         city,
         phone,
@@ -145,13 +159,7 @@ pub async fn run(store: &ProfileStore, section: Option<&str>) -> Result<()> {
         motivations,
         ideal_environment,
         ..Default::default()
-    };
-
-    profile.validate()?;
-    store.save_profile(&profile).await?;
-
-    println!("\n✓ Profile saved successfully.");
-    Ok(())
+    })
 }
 
 fn read_line(prompt: &str) -> Result<String> {

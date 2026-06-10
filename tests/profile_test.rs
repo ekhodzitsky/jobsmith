@@ -44,6 +44,27 @@ fn profile_validation_fails_without_email() {
     assert!(err.to_string().contains("email is required"));
 }
 
+#[cfg(unix)]
+#[tokio::test]
+async fn db_file_is_owner_only() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = std::env::temp_dir().join(format!("jobsmith-perm-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let db = dir.join("jobsmith.db");
+
+    let _store = ProfileStore::open(&db).await.unwrap();
+    let mode = std::fs::metadata(&db).unwrap().permissions().mode();
+    // best-effort cleanup of the temp dir
+    let _ = std::fs::remove_dir_all(&dir);
+
+    assert_eq!(
+        mode & 0o777,
+        0o600,
+        "PII db must be owner-only, got {mode:o}"
+    );
+}
+
 #[tokio::test]
 async fn record_application_dedupes_by_vacancy_id() {
     let store = ProfileStore::open_in_memory().await.unwrap();

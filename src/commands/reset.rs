@@ -19,7 +19,7 @@ pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
                 return Ok(());
             }
 
-            if !confirm_reset("profile") {
+            if !confirm_reset("profile").await {
                 println!("Cancelled.");
                 return Ok(());
             }
@@ -36,7 +36,7 @@ pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
                 return Ok(());
             }
 
-            if !confirm_reset("applications") {
+            if !confirm_reset("applications").await {
                 println!("Cancelled.");
                 return Ok(());
             }
@@ -52,7 +52,7 @@ pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
                 return Ok(());
             }
 
-            if !confirm_reset("all data") {
+            if !confirm_reset("all data").await {
                 println!("Cancelled.");
                 return Ok(());
             }
@@ -72,12 +72,18 @@ pub async fn run(target: &str, data_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-fn confirm_reset(what: &str) -> bool {
-    print!("Type RESET to confirm deletion of {}: ", what);
-    // best-effort: an unflushed prompt only degrades UX, the read below still works
-    let _ = std::io::Write::flush(&mut std::io::stdout());
-    let mut buf = String::new();
-    // best-effort: on read failure buf stays empty -> != "RESET" -> reset is cancelled
-    let _ = std::io::stdin().read_line(&mut buf);
-    buf.trim() == "RESET"
+async fn confirm_reset(what: &'static str) -> bool {
+    // stdin reads are blocking; keep them off the async runtime.
+    // A JoinError (panicked prompt task) counts as "not confirmed".
+    tokio::task::spawn_blocking(move || {
+        print!("Type RESET to confirm deletion of {}: ", what);
+        // best-effort: an unflushed prompt only degrades UX, the read below still works
+        let _ = std::io::Write::flush(&mut std::io::stdout());
+        let mut buf = String::new();
+        // best-effort: on read failure buf stays empty -> != "RESET" -> reset is cancelled
+        let _ = std::io::stdin().read_line(&mut buf);
+        buf.trim() == "RESET"
+    })
+    .await
+    .unwrap_or(false)
 }

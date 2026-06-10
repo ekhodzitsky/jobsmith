@@ -57,6 +57,11 @@ impl rusqlite::types::FromSql for ApplicationStatus {
 }
 
 /// Manages the SQLite database for profiles and application history.
+///
+/// rusqlite calls are blocking and run inline in async methods under a
+/// `tokio::sync::Mutex`: for this single-user CLI the pauses are
+/// microseconds on a local file. If the store ever serves concurrent
+/// workloads, move the calls to `tokio::task::spawn_blocking`.
 #[derive(Debug)]
 pub struct ProfileStore {
     conn: Mutex<Connection>,
@@ -65,7 +70,14 @@ pub struct ProfileStore {
 impl ProfileStore {
     /// Open or create the profile database at the given path.
     pub async fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let conn = Connection::open(path).map_err(JobsmithError::Database)?;
+        let conn = Connection::open(&path).map_err(JobsmithError::Database)?;
+        // The database holds PII; default umask leaves it world-readable.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))
+                .map_err(JobsmithError::Io)?;
+        }
         let store = Self {
             conn: Mutex::new(conn),
         };

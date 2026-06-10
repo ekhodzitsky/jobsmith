@@ -56,6 +56,7 @@ impl App {
     }
 
     pub async fn run(&mut self) -> Result<Action> {
+        install_panic_hook();
         let term = setup_terminal()?;
         let mut terminal = TerminalGuard::new(term);
         let mut reader = EventStream::new();
@@ -265,6 +266,21 @@ impl Drop for TerminalGuard {
         // report a failed restore from here
         let _ = restore_terminal(&mut self.terminal);
     }
+}
+
+/// Restore the terminal before the default panic output runs, so the
+/// message and backtrace are not swallowed by the alternate screen.
+fn install_panic_hook() {
+    static HOOK: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+    HOOK.get_or_init(|| {
+        let prev = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            // best-effort: already panicking, nowhere to report failures
+            let _ = disable_raw_mode();
+            let _ = execute!(io::stdout(), LeaveAlternateScreen);
+            prev(info);
+        }));
+    });
 }
 
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>> {
