@@ -2,6 +2,7 @@
 //!
 //! Profiles are stored in SQLite with migrations.
 
+pub mod migrations;
 pub mod model;
 pub mod store;
 
