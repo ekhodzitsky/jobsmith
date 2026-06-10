@@ -9,3 +9,11 @@
 .idea/
 .vscode/
 *.iml
+
+# cargo-kimi outputs
+.kimi/
+kimi-score.svg
+
+# stray local binaries
+/test_select
+/test_writer
