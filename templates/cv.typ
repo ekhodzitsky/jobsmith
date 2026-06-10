@@ -1,6 +1,6 @@
 // Professional CV — Russian conventions
 #set page("a4", margin: (x: 1.6cm, y: 1.4cm))
-#set text(font: "Liberation Sans", size: 10.5pt, lang: "ru")
+#set text(font: ("Liberation Sans", "Helvetica Neue", "Arial"), size: 10.5pt, lang: "ru")
 #set par(justify: true, leading: 0.52em)
 #set heading(numbering: none)
 

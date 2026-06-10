@@ -1,6 +1,6 @@
 // Professional Cover Letter — Russian business format
 #set page("a4", margin: (x: 2.2cm, y: 2.2cm))
-#set text(font: "Liberation Sans", size: 11pt, lang: "ru")
+#set text(font: ("Liberation Sans", "Helvetica Neue", "Arial"), size: 11pt, lang: "ru")
 #set par(justify: true, leading: 0.58em, first-line-indent: 0em)
 
 // Date
