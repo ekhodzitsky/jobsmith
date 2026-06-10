@@ -2,7 +2,7 @@
 name = "jobsmith"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.85"
 authors = ["ekhodzitsky"]
 description = "AI-powered job application assistant for HeadHunter (Russia) via Kimi Code"
 license = "MIT"
