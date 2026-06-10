@@ -65,9 +65,9 @@ pub enum JobsmithError {
     #[error("process timed out after {duration_secs}s")]
     ProcessTimeout { duration_secs: u64 },
 
-    /// Kimi wire protocol error.
-    #[error("kimi wire error: {0}")]
-    KimiWire(String),
+    /// Kimi agent protocol (ACP) error.
+    #[error("kimi protocol error: {0}")]
+    KimiProtocol(String),
 
     /// Invalid vacancy ID provided.
     #[error("invalid vacancy id: {0}")]

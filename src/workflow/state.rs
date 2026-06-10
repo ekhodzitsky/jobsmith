@@ -223,7 +223,7 @@ impl Stage {
 
 /// Workflow engine that runs the state machine.
 ///
-/// In production, this integrates with Kimi Code via `kimi-wire`.
+/// In production, this integrates with Kimi Code via ACP.
 /// For now, it provides the structure and prompt builders.
 #[derive(Debug)]
 pub struct WorkflowEngine;

@@ -9,7 +9,7 @@ use crate::hh::client::{extract_vacancy_id, HhClient};
 use crate::profile::store::{ApplicationStatus, ProfileStore};
 use crate::templates;
 use crate::workflow::state::Stage;
-use crate::workflow::{KimiClient, WorkflowEngine};
+use crate::workflow::{AcpClient, WorkflowEngine};
 
 /// Run the apply command.
 ///
@@ -39,7 +39,7 @@ pub async fn run(
         vacancy.base.employer_name()
     );
 
-    let mut kimi_client = KimiClient::spawn().await?;
+    let mut kimi_client = AcpClient::spawn().await?;
     let engine = WorkflowEngine::new();
     let stage = engine.start(vacancy.clone(), profile.clone());
 

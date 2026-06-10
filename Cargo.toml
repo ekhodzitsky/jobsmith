@@ -14,7 +14,7 @@ exclude = [".github/", ".kimi/", "kimi-score.svg", "TODO.md", "test_select", "te
 
 [dependencies]
 # Async runtime
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "process"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "process", "fs"] }
 
 # HTTP client
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
@@ -29,7 +29,7 @@ clap = { version = "4", features = ["derive"] }
 # Database
 rusqlite = { version = "0.32", features = ["bundled", "chrono"] }
 
-# Typed errors (kimi-wire convention: no anyhow in public API)
+# Typed errors (no anyhow in the public API)
 thiserror = "2"
 
 # Logging
@@ -56,8 +56,6 @@ ratatui = "0.29"
 crossterm = { version = "0.28", features = ["event-stream"] }
 futures-util = "0.3"
 
-# Kimi Code Wire protocol client
-kimi-wire = { version = "0.5", default-features = false, features = ["process", "redact"] }
 
 [dev-dependencies]
 tokio-test = "0.4"
