@@ -95,6 +95,7 @@ jobsmith apply <url|id>     # AI-пайплайн: оценка → CV → пи�
 jobsmith list               # Список откликов и статусов
 jobsmith mark-applied <id>  # Отметить отклик как отправленный
 jobsmith salary <company>   # Справочник зарплат (нужен salary_data.json, см. ниже)
+jobsmith salary --role 96 --area 1   # Онлайн-статистика зарплат с hh.ru (без файла)
 jobsmith reset              # Сброс профиля или данных
 ```
 
@@ -111,9 +112,18 @@ jobsmith reset              # Сброс профиля или данных
 
 ---
 
-## 📊 Справочник зарплат: `salary_data.json`
+## 📊 Справочник зарплат
 
-`jobsmith salary` ищет по **локальному** файлу `salary_data.json` в каталоге данных — без него команда сообщит об ошибке:
+Два режима:
+
+**Онлайн** — статистика HH по профролям, файл не нужен:
+
+```bash
+jobsmith salary --role 96 --area 1        # 96 = разработчик, 1 = Москва
+jobsmith salary --role 96 --area 1 --json
+```
+
+**Локальный** — `jobsmith salary <company>` ищет по файлу `salary_data.json` в каталоге данных; без него команда сообщит об ошибке:
 
 | Где лежит | Путь |
 |-----------|------|
