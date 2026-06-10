@@ -45,6 +45,25 @@ fn profile_validation_fails_without_email() {
 }
 
 #[tokio::test]
+async fn record_application_dedupes_by_vacancy_id() {
+    let store = ProfileStore::open_in_memory().await.unwrap();
+
+    let first = store
+        .record_application("123", Some("Dev"), Some("Corp"))
+        .await
+        .unwrap();
+    let second = store
+        .record_application("123", Some("Dev v2"), Some("Corp"))
+        .await
+        .unwrap();
+
+    assert_eq!(first, second, "re-applying must reuse the existing row");
+    let apps = store.list_applications().await.unwrap();
+    assert_eq!(apps.len(), 1, "no duplicate rows for the same vacancy");
+    assert_eq!(apps[0].vacancy_name.as_deref(), Some("Dev v2"));
+}
+
+#[tokio::test]
 async fn application_record_crud() {
     let store = ProfileStore::open_in_memory().await.unwrap();
 

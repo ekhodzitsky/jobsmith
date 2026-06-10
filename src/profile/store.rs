@@ -211,6 +211,9 @@ impl ProfileStore {
     }
 
     /// Record a new job application.
+    ///
+    /// Re-applying to the same vacancy reuses (and refreshes) the existing
+    /// row instead of inserting a duplicate.
     #[instrument(skip(self), fields(vacancy_id = %vacancy_id))]
     pub async fn record_application(
         &self,
@@ -219,6 +222,31 @@ impl ProfileStore {
         employer_name: Option<&str>,
     ) -> Result<i64> {
         let conn = self.conn.lock().await;
+        let existing: Option<i64> = conn
+            .query_row(
+                "SELECT id FROM applications WHERE vacancy_id = ?1 ORDER BY id LIMIT 1",
+                params![vacancy_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(JobsmithError::Database)?;
+
+        if let Some(id) = existing {
+            conn.execute(
+                r#"
+                UPDATE applications
+                SET vacancy_name = ?1,
+                    employer_name = ?2,
+                    updated_at = datetime('now')
+                WHERE id = ?3
+                "#,
+                params![vacancy_name, employer_name, id],
+            )
+            .map_err(JobsmithError::Database)?;
+            info!(application_id = id, "existing application reused");
+            return Ok(id);
+        }
+
         conn.execute(
             r#"
                 INSERT INTO applications (vacancy_id, vacancy_name, employer_name)
