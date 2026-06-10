@@ -81,11 +81,17 @@ pub async fn run(
                         Some(vacancy.base.employer_name()),
                     )
                     .await?;
+                // forced runs skip evaluation: a synthetic 100 would corrupt history
+                let recorded_score = if force {
+                    None
+                } else {
+                    Some(evaluation.score())
+                };
                 store
                     .update_application_status(
                         app_id,
                         ApplicationStatus::Draft,
-                        Some(evaluation.score()),
+                        recorded_score,
                         cv_pdf.to_str(),
                         cover_pdf.to_str(),
                     )
@@ -109,11 +115,17 @@ pub async fn run(
                         Some(vacancy.base.employer_name()),
                     )
                     .await?;
+                // forced runs skip evaluation: a synthetic 100 would corrupt history
+                let recorded_score = if force {
+                    None
+                } else {
+                    Some(evaluation.score())
+                };
                 store
                     .update_application_status(
                         app_id,
                         ApplicationStatus::Draft,
-                        Some(evaluation.score()),
+                        recorded_score,
                         Some(&cv_pdf_path),
                         Some(&cover_pdf_path),
                     )
