@@ -7,6 +7,10 @@ authors = ["ekhodzitsky"]
 description = "AI-powered job application assistant for HeadHunter (Russia) via Kimi Code"
 license = "MIT"
 repository = "https://github.com/ekhodzitsky/jobsmith"
+keywords = ["cli", "job-search", "headhunter", "resume", "ai"]
+categories = ["command-line-utilities"]
+# defense-in-depth: keep local artifacts out of the published package
+exclude = [".github/", ".kimi/", "kimi-score.svg", "TODO.md", "test_select", "test_writer"]
 
 [dependencies]
 # Async runtime

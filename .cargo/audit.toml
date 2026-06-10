@@ -1,0 +1,17 @@
+# cargo-audit configuration (also used by the `audit` CI job).
+#
+# Accepted advisories — all transitive, warning-level (unmaintained/unsound),
+# with no exploit path in this single-user CLI. Re-evaluate on dependency
+# bumps; drop entries as ratatui/scraper release fixed versions.
+
+[advisories]
+ignore = [
+    # fxhash is unmaintained; pulled in via scraper. Hashing untrusted HTML
+    # class names is not a security boundary here.
+    "RUSTSEC-2025-0057",
+    # paste is unmaintained; proc-macro used at build time via ratatui.
+    "RUSTSEC-2024-0436",
+    # lru IterMut unsoundness; via ratatui, which never uses IterMut on the
+    # affected type in our render paths.
+    "RUSTSEC-2026-0002",
+]
