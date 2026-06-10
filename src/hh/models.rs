@@ -81,7 +81,7 @@ impl Vacancy {
     pub fn employer_name(&self) -> &str {
         self.employer
             .as_ref()
-            .map(|e| e.name.as_str())
+            .and_then(|e| e.name.as_deref())
             .unwrap_or("Unknown")
     }
 }
@@ -100,10 +100,15 @@ pub struct Salary {
 }
 
 /// Employer information.
+///
+/// HH may return partial objects (e.g. hidden/anonymous employers),
+/// so even `id`/`name` are optional.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Employer {
-    pub id: String,
-    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -132,8 +137,10 @@ pub struct LogoUrls {
 /// Geographic area (city/region).
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Area {
-    pub id: String,
-    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -143,8 +150,10 @@ pub struct Area {
 /// Vacancy type (e.g., open, closed).
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct VacancyType {
-    pub id: String,
-    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 
 /// Generic named entity (experience, schedule, skill, etc.).
@@ -465,8 +474,8 @@ mod tests {
                 gross: Some(true),
             }),
             employer: Some(Employer {
-                id: "1".to_string(),
-                name: "Corp".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Corp".to_string()),
                 url: None,
                 alternate_url: None,
                 logo_urls: None,
@@ -474,14 +483,14 @@ mod tests {
                 trusted: Some(true),
             }),
             area: Some(Area {
-                id: "1".to_string(),
-                name: "Moscow".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Moscow".to_string()),
                 url: None,
                 parent_id: None,
             }),
             vacancy_type: Some(VacancyType {
-                id: "open".to_string(),
-                name: "Open".to_string(),
+                id: Some("open".to_string()),
+                name: Some("Open".to_string()),
             }),
             experience: Some(NamedEntity {
                 id: Some("1".to_string()),
@@ -521,8 +530,8 @@ mod tests {
                 description: None,
                 salary: None,
                 employer: Some(Employer {
-                    id: "2".to_string(),
-                    name: "Other".to_string(),
+                    id: Some("2".to_string()),
+                    name: Some("Other".to_string()),
                     url: None,
                     alternate_url: None,
                     logo_urls: None,
@@ -593,8 +602,8 @@ mod tests {
     #[test]
     fn employer_serde_roundtrip() {
         let employer = Employer {
-            id: "1".to_string(),
-            name: "Yandex".to_string(),
+            id: Some("1".to_string()),
+            name: Some("Yandex".to_string()),
             url: Some("https://yandex.ru".to_string()),
             alternate_url: None,
             logo_urls: Some(LogoUrls {
@@ -613,8 +622,8 @@ mod tests {
     #[test]
     fn area_serde_roundtrip() {
         let area = Area {
-            id: "1".to_string(),
-            name: "Moscow".to_string(),
+            id: Some("1".to_string()),
+            name: Some("Moscow".to_string()),
             url: Some("https://api.hh.ru/areas/1".to_string()),
             parent_id: Some("0".to_string()),
         };
@@ -713,6 +722,58 @@ mod tests {
         let json = serde_json::to_string(&relocation).unwrap();
         let decoded: Relocation = serde_json::from_str(&json).unwrap();
         assert_eq!(relocation, decoded);
+    }
+
+    #[test]
+    fn employer_parses_partial_objects() {
+        // HH returns partial employer objects for hidden/anonymous employers.
+        let from_name = serde_json::from_str::<Employer>(r#"{"name":"Hidden Company"}"#);
+        assert!(
+            from_name.is_ok(),
+            "name-only employer must parse: {from_name:?}"
+        );
+        let from_id = serde_json::from_str::<Employer>(r#"{"id":"1"}"#);
+        assert!(from_id.is_ok(), "id-only employer must parse: {from_id:?}");
+        let empty = serde_json::from_str::<Employer>("{}");
+        assert!(empty.is_ok(), "empty employer must parse: {empty:?}");
+    }
+
+    #[test]
+    fn area_parses_partial_objects() {
+        let from_name = serde_json::from_str::<Area>(r#"{"name":"Москва"}"#);
+        assert!(
+            from_name.is_ok(),
+            "name-only area must parse: {from_name:?}"
+        );
+        let from_id = serde_json::from_str::<Area>(r#"{"id":"1"}"#);
+        assert!(from_id.is_ok(), "id-only area must parse: {from_id:?}");
+        let empty = serde_json::from_str::<Area>("{}");
+        assert!(empty.is_ok(), "empty area must parse: {empty:?}");
+    }
+
+    #[test]
+    fn vacancy_type_parses_partial_objects() {
+        let from_name = serde_json::from_str::<VacancyType>(r#"{"name":"Открытая"}"#);
+        assert!(
+            from_name.is_ok(),
+            "name-only type must parse: {from_name:?}"
+        );
+        let from_id = serde_json::from_str::<VacancyType>(r#"{"id":"open"}"#);
+        assert!(from_id.is_ok(), "id-only type must parse: {from_id:?}");
+        let empty = serde_json::from_str::<VacancyType>("{}");
+        assert!(empty.is_ok(), "empty type must parse: {empty:?}");
+    }
+
+    #[test]
+    fn employer_partial_roundtrip() {
+        let parsed: Employer = serde_json::from_str(r#"{"name":"Hidden Company"}"#).unwrap();
+        let json = serde_json::to_string(&parsed).unwrap();
+        assert!(
+            !json.contains("\"id\""),
+            "absent id must be skipped: {json}"
+        );
+        let decoded: Employer = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, decoded);
     }
 
     #[test]

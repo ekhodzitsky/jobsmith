@@ -160,7 +160,7 @@ STRENGTHS: <что выделяет кандидата>
             .base
             .area
             .as_ref()
-            .map(|a| a.name.clone())
+            .and_then(|a| a.name.clone())
             .unwrap_or_else(|| "не указан".to_string()),
         description = truncate(&vacancy_desc, FIT_EVAL_DESCRIPTION_LIMIT),
         skills = skills,

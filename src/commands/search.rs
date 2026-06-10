@@ -64,7 +64,7 @@ pub async fn run(
             let area = vacancy
                 .area
                 .as_ref()
-                .map(|a| a.name.clone())
+                .and_then(|a| a.name.clone())
                 .unwrap_or_else(|| "?".to_string());
 
             let experience = vacancy

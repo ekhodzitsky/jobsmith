@@ -64,7 +64,7 @@ fn draw_table(f: &mut Frame, app: &App, area: Rect) {
             let location = vacancy
                 .area
                 .as_ref()
-                .map(|a| a.name.clone())
+                .and_then(|a| a.name.clone())
                 .unwrap_or_else(|| "?".to_string());
 
             let cells = vec![
@@ -151,7 +151,7 @@ fn draw_detail_popup(f: &mut Frame, app: &App) {
         let location = base
             .area
             .as_ref()
-            .map(|a| a.name.clone())
+            .and_then(|a| a.name.clone())
             .unwrap_or_else(|| "?".to_string());
         let description = base
             .description

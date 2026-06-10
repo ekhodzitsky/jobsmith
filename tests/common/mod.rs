@@ -82,8 +82,8 @@ pub fn dummy_vacancy() -> Vacancy {
             gross: Some(true),
         }),
         employer: Some(Employer {
-            id: "789".to_string(),
-            name: "Яндекс".to_string(),
+            id: Some("789".to_string()),
+            name: Some("Яндекс".to_string()),
             url: None,
             alternate_url: None,
             logo_urls: None,
@@ -91,14 +91,14 @@ pub fn dummy_vacancy() -> Vacancy {
             trusted: Some(true),
         }),
         area: Some(Area {
-            id: "1".to_string(),
-            name: "Москва".to_string(),
+            id: Some("1".to_string()),
+            name: Some("Москва".to_string()),
             url: None,
             parent_id: None,
         }),
         vacancy_type: Some(VacancyType {
-            id: "open".to_string(),
-            name: "Открытая".to_string(),
+            id: Some("open".to_string()),
+            name: Some("Открытая".to_string()),
         }),
         experience: Some(NamedEntity {
             id: Some("between3And6".to_string()),

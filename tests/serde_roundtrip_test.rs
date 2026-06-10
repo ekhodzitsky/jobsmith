@@ -15,8 +15,8 @@ fn vacancies_response_roundtrip() {
                 gross: Some(true),
             }),
             employer: Some(Employer {
-                id: "1".to_string(),
-                name: "Employer".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Employer".to_string()),
                 url: Some("url".to_string()),
                 alternate_url: Some("alt".to_string()),
                 logo_urls: Some(LogoUrls {
@@ -28,14 +28,14 @@ fn vacancies_response_roundtrip() {
                 trusted: Some(true),
             }),
             area: Some(Area {
-                id: "1".to_string(),
-                name: "Moscow".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Moscow".to_string()),
                 url: Some("url".to_string()),
                 parent_id: Some("0".to_string()),
             }),
             vacancy_type: Some(VacancyType {
-                id: "1".to_string(),
-                name: "Open".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Open".to_string()),
             }),
             experience: Some(NamedEntity {
                 id: Some("1".to_string()),
@@ -119,8 +119,8 @@ fn vacancy_roundtrip() {
         description: None,
         salary: None,
         employer: Some(Employer {
-            id: "1".to_string(),
-            name: "Test".to_string(),
+            id: Some("1".to_string()),
+            name: Some("Test".to_string()),
             url: None,
             alternate_url: None,
             logo_urls: None,
@@ -167,8 +167,8 @@ fn salary_roundtrip() {
 #[test]
 fn employer_roundtrip() {
     let original = Employer {
-        id: "1".to_string(),
-        name: "Test".to_string(),
+        id: Some("1".to_string()),
+        name: Some("Test".to_string()),
         url: None,
         alternate_url: None,
         logo_urls: None,
@@ -195,8 +195,8 @@ fn logo_urls_roundtrip() {
 #[test]
 fn area_roundtrip() {
     let original = Area {
-        id: "1".to_string(),
-        name: "Moscow".to_string(),
+        id: Some("1".to_string()),
+        name: Some("Moscow".to_string()),
         url: None,
         parent_id: None,
     };
@@ -208,8 +208,8 @@ fn area_roundtrip() {
 #[test]
 fn vacancy_type_roundtrip() {
     let original = VacancyType {
-        id: "1".to_string(),
-        name: "Open".to_string(),
+        id: Some("1".to_string()),
+        name: Some("Open".to_string()),
     };
     let json = serde_json::to_string(&original).unwrap();
     let deserialized: VacancyType = serde_json::from_str(&json).unwrap();
@@ -278,8 +278,8 @@ fn vacancy_detail_roundtrip() {
             description: None,
             salary: None,
             employer: Some(Employer {
-                id: "1".to_string(),
-                name: "Test".to_string(),
+                id: Some("1".to_string()),
+                name: Some("Test".to_string()),
                 url: None,
                 alternate_url: None,
                 logo_urls: None,

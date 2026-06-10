@@ -10,8 +10,8 @@ fn make_minimal_vacancy() -> Vacancy {
         description: None,
         salary: None,
         employer: Some(Employer {
-            id: "1".to_string(),
-            name: "Test Corp".to_string(),
+            id: Some("1".to_string()),
+            name: Some("Test Corp".to_string()),
             url: None,
             alternate_url: None,
             logo_urls: None,
