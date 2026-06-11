@@ -14,6 +14,7 @@ pub mod cli;
 pub mod commands;
 pub mod error;
 pub mod hh;
+pub(crate) mod http;
 pub mod profile;
 pub mod salary;
 pub mod templates;

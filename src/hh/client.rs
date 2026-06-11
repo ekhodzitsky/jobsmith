@@ -2,49 +2,14 @@
 
 use std::time::Duration;
 
-use reqwest::{Client, ClientBuilder, StatusCode};
+use reqwest::{Client, ClientBuilder};
 use tracing::{instrument, trace};
 
 use crate::error::{JobsmithError, Result};
 use crate::hh::models::{
     SalaryStatisticsResponse, VacanciesResponse, VacancyDetail, VacancySearchQuery,
 };
-
-/// Compute a delay with jitter for retry backoff.
-///
-/// Uses the current system time nanoseconds as a lightweight entropy source
-/// to avoid a `rand` dependency while still preventing thundering-herd
-/// synchronization across independent processes.
-fn backoff_with_jitter(attempt: u32) -> Duration {
-    let base_secs = 2u64.saturating_pow(attempt.saturating_sub(1));
-    let base = Duration::from_secs(base_secs);
-    let jitter_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos() as u64
-        % 500;
-    base + Duration::from_millis(jitter_ms)
-}
-
-/// Parse a `Retry-After` header (delay-seconds form; HTTP-date is ignored).
-fn parse_retry_after(response: &reqwest::Response) -> Option<Duration> {
-    response
-        .headers()
-        .get(reqwest::header::RETRY_AFTER)?
-        .to_str()
-        .ok()?
-        .trim()
-        .parse::<u64>()
-        .ok()
-        .map(Duration::from_secs)
-}
-
-/// Delay before retry `attempt`; a server-provided `Retry-After` wins
-/// when it is longer than the local backoff.
-fn retry_delay(attempt: u32, retry_after: Option<Duration>) -> Duration {
-    let backoff = backoff_with_jitter(attempt);
-    retry_after.map_or(backoff, |ra| ra.max(backoff))
-}
+use crate::http::{is_retryable, parse_retry_after, retry_delay, MAX_RETRIES};
 
 /// Base URL for the HeadHunter API.
 const HH_API_BASE: &str = "https://api.hh.ru";
@@ -61,9 +26,6 @@ const HH_USER_AGENT: &str = concat!(
 
 /// Default timeout for HH API requests.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-
-/// Maximum number of retries for transient HH API failures.
-const HH_API_MAX_RETRIES: u32 = 3;
 
 /// HTTP client for the HeadHunter API.
 #[derive(Debug, Clone)]
@@ -114,7 +76,7 @@ impl HhClient {
         let mut last_error: Option<JobsmithError> = None;
         let mut retry_after: Option<Duration> = None;
 
-        for attempt in 0..=HH_API_MAX_RETRIES {
+        for attempt in 0..=MAX_RETRIES {
             if attempt > 0 {
                 tokio::time::sleep(retry_delay(attempt, retry_after.take())).await;
             }
@@ -130,10 +92,7 @@ impl HhClient {
                     if status.is_success() {
                         return Ok(response);
                     }
-                    if status == StatusCode::TOO_MANY_REQUESTS
-                        || status == StatusCode::INTERNAL_SERVER_ERROR
-                        || status == StatusCode::SERVICE_UNAVAILABLE
-                    {
+                    if is_retryable(status) {
                         retry_after = parse_retry_after(&response);
                         last_error = Some(JobsmithError::HhApiStatus {
                             status: status.as_u16(),
