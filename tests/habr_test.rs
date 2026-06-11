@@ -63,3 +63,17 @@ async fn not_found_maps_to_habr_request_error() {
     let err = client.get_vacancy("404").await.unwrap_err();
     assert!(matches!(err, JobsmithError::HabrRequest(_)), "{err:?}");
 }
+
+/// Live smoke against the real Habr Career site. Network-dependent, so
+/// ignored by default: `cargo test --test habr_test live_ -- --ignored`.
+#[ignore = "hits the live career.habr.com"]
+#[tokio::test]
+async fn live_search_and_detail_roundtrip() {
+    let client = HabrClient::new().unwrap();
+    let items = client.search("rust").await.expect("live search");
+    assert!(!items.is_empty(), "expected live vacancies");
+
+    let detail = client.get_vacancy(&items[0].id).await.expect("live detail");
+    assert!(!detail.base.name.is_empty());
+    assert!(detail.base.description.is_some());
+}

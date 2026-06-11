@@ -2,7 +2,31 @@
 
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+
+/// Which job board to query.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
+pub enum VacancySource {
+    /// HeadHunter (`hh.ru`) — requires an OAuth token for live access.
+    #[default]
+    Hh,
+    /// Habr Career (`career.habr.com`) — public RSS + JSON-LD, no token.
+    Habr,
+}
+
+impl VacancySource {
+    /// Infer the source from a vacancy URL or id.
+    ///
+    /// A Habr Career URL is recognized by its host; everything else
+    /// (an hh.ru URL or a bare numeric id) defaults to HeadHunter.
+    pub fn detect(input: &str) -> Self {
+        if input.contains("career.habr.com") {
+            Self::Habr
+        } else {
+            Self::Hh
+        }
+    }
+}
 
 /// AI-powered job application assistant for HeadHunter (Russia).
 #[derive(Debug, Parser)]
@@ -65,9 +89,13 @@ pub enum Commands {
         #[arg(short, long, default_value = "20")]
         per_page: i32,
 
-        /// Result page (1-based).
+        /// Result page (1-based, HeadHunter only).
         #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(i32).range(1..))]
         page: i32,
+
+        /// Job board to search.
+        #[arg(long, value_enum, default_value_t = VacancySource::Hh)]
+        source: VacancySource,
 
         /// Launch interactive TUI browser.
         #[arg(short = 'i', long)]
@@ -136,4 +164,26 @@ pub enum Commands {
         #[arg(value_name = "TARGET")]
         target: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detect_recognizes_habr_url() {
+        assert_eq!(
+            VacancySource::detect("https://career.habr.com/vacancies/1000166679"),
+            VacancySource::Habr
+        );
+    }
+
+    #[test]
+    fn detect_defaults_to_hh_for_hh_url_and_bare_id() {
+        assert_eq!(
+            VacancySource::detect("https://hh.ru/vacancy/123456"),
+            VacancySource::Hh
+        );
+        assert_eq!(VacancySource::detect("123456"), VacancySource::Hh);
+    }
 }

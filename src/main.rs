@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use clap::Parser;
 use tracing::{error, info};
 
-use jobsmith::cli::{Cli, Commands};
+use jobsmith::cli::{Cli, Commands, VacancySource};
 use jobsmith::commands::{apply, list, mark_applied, reset, salary_cmd, search, setup};
 use jobsmith::error::JobsmithError;
 use jobsmith::hh::models::VacancySearchQuery;
@@ -79,6 +79,7 @@ async fn run() -> Result<(), JobsmithError> {
             with_salary,
             per_page,
             page,
+            source,
             interactive,
         } => {
             let query = VacancySearchQuery {
@@ -97,7 +98,7 @@ async fn run() -> Result<(), JobsmithError> {
                 search_field: None,
                 professional_role: None,
             };
-            search::run(query, interactive, Some(&data_dir)).await
+            search::run(query, interactive, Some(&data_dir), source).await
         }
         Commands::Apply { vacancy, force } => {
             let store = match ProfileStore::open(&db_path).await {
@@ -107,7 +108,8 @@ async fn run() -> Result<(), JobsmithError> {
                     return Err(e);
                 }
             };
-            apply::run(&store, &vacancy, force, &data_dir).await
+            let source = VacancySource::detect(&vacancy);
+            apply::run(&store, &vacancy, force, &data_dir, source).await
         }
         Commands::List { detailed } => {
             let store = match ProfileStore::open(&db_path).await {

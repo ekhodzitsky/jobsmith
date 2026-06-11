@@ -4,8 +4,11 @@ use std::path::Path;
 
 use tracing::{info, instrument};
 
+use crate::cli::VacancySource;
 use crate::error::{JobsmithError, Result};
+use crate::habr::HabrClient;
 use crate::hh::client::{extract_vacancy_id, HhClient};
+use crate::hh::models::VacancyDetail;
 use crate::profile::store::{ApplicationStatus, ProfileStore};
 use crate::templates;
 use crate::workflow::state::Stage;
@@ -21,18 +24,17 @@ pub async fn run(
     vacancy_id: &str,
     force: bool,
     data_dir: &Path,
+    source: VacancySource,
 ) -> Result<()> {
     let profile = store.load_profile().await?.ok_or_else(|| {
         JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string())
     })?;
 
-    let client = HhClient::new()?;
-
     // Extract ID from URL if needed
     let id = extract_vacancy_id(vacancy_id)?;
-    info!(vacancy_id = %id, "fetching vacancy");
+    info!(vacancy_id = %id, ?source, "fetching vacancy");
 
-    let vacancy = client.get_vacancy(&id).await?;
+    let vacancy = fetch_vacancy(source, &id).await?;
     println!(
         "\n=== {} @ {} ===\n",
         vacancy.base.name,
@@ -54,6 +56,14 @@ pub async fn run(
         tracing::warn!(error = %e, "kimi shutdown failed");
     }
     workflow_result
+}
+
+/// Fetch the vacancy detail from the selected job board.
+async fn fetch_vacancy(source: VacancySource, id: &str) -> Result<VacancyDetail> {
+    match source {
+        VacancySource::Hh => HhClient::new()?.get_vacancy(id).await,
+        VacancySource::Habr => HabrClient::new()?.get_vacancy(id).await,
+    }
 }
 
 /// Compile documents, transition to [`Stage::Done`] and record the application.
