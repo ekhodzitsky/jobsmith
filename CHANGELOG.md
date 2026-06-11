@@ -7,6 +7,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Работа России and GeekJob as vacancy sources.** `--source trudvsem`
+  queries the official open-data JSON API (`opendata.trudvsem.ru`, no
+  key, salaries included); `--source geekjob` reads GeekJob's public
+  listing plus schema.org `JobPosting` JSON-LD (with `baseSalary`).
+  `apply` auto-detects `trudvsem.ru`/`geekjob.ru` URLs (composite and
+  hex ids handled). The shared JSON-LD extractor was factored out of the
+  Habr code and now serves both Habr and GeekJob. Rabota.ru was
+  investigated and intentionally not added — it is a Nuxt SPA with no
+  stable anonymous machine channel for its listing.
 - **Habr Career as a second vacancy source.** `jobsmith search <query>
   --source habr` lists vacancies from Habr Career's public RSS feed, and
   `apply` auto-detects a `career.habr.com` URL and reads the vacancy's
