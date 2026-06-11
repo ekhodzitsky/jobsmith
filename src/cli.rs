@@ -12,16 +12,20 @@ pub enum VacancySource {
     Hh,
     /// Habr Career (`career.habr.com`) — public RSS + JSON-LD, no token.
     Habr,
+    /// Работа России (`trudvsem.ru`) — open government JSON API, no token.
+    Trudvsem,
 }
 
 impl VacancySource {
     /// Infer the source from a vacancy URL or id.
     ///
-    /// A Habr Career URL is recognized by its host; everything else
-    /// (an hh.ru URL or a bare numeric id) defaults to HeadHunter.
+    /// Known hosts are recognized; everything else (an hh.ru URL or a
+    /// bare numeric id) defaults to HeadHunter.
     pub fn detect(input: &str) -> Self {
         if input.contains("career.habr.com") {
             Self::Habr
+        } else if input.contains("trudvsem.ru") {
+            Self::Trudvsem
         } else {
             Self::Hh
         }
@@ -175,6 +179,16 @@ mod tests {
         assert_eq!(
             VacancySource::detect("https://career.habr.com/vacancies/1000166679"),
             VacancySource::Habr
+        );
+    }
+
+    #[test]
+    fn detect_recognizes_trudvsem_url() {
+        assert_eq!(
+            VacancySource::detect(
+                "https://trudvsem.ru/vacancy/card/7226c750-02f1-11eb/58c3f1e4-5b4a-11f1"
+            ),
+            VacancySource::Trudvsem
         );
     }
 

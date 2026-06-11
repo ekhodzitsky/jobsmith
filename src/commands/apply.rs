@@ -30,8 +30,15 @@ pub async fn run(
         JobsmithError::Config("profile not found. run `jobsmith setup` first".to_string())
     })?;
 
-    // Extract ID from URL if needed
-    let id = extract_vacancy_id(vacancy_id)?;
+    // Extract the source-specific ID from the URL/raw input
+    let id = match source {
+        // numeric ids for both
+        VacancySource::Hh | VacancySource::Habr => extract_vacancy_id(vacancy_id)?,
+        VacancySource::Trudvsem => {
+            let (cc, vid) = crate::trudvsem::api::extract_card_ids(vacancy_id)?;
+            format!("{cc}/{vid}")
+        }
+    };
     info!(vacancy_id = %id, ?source, "fetching vacancy");
 
     let vacancy = fetch_vacancy(source, &id).await?;
@@ -63,6 +70,12 @@ async fn fetch_vacancy(source: VacancySource, id: &str) -> Result<VacancyDetail>
     match source {
         VacancySource::Hh => HhClient::new()?.get_vacancy(id).await,
         VacancySource::Habr => HabrClient::new()?.get_vacancy(id).await,
+        VacancySource::Trudvsem => {
+            let (cc, vid) = crate::trudvsem::api::extract_card_ids(id)?;
+            crate::trudvsem::TrudvsemClient::new()?
+                .get_vacancy(&cc, &vid)
+                .await
+        }
     }
 }
 

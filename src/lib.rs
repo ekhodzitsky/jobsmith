@@ -19,6 +19,7 @@ pub(crate) mod http;
 pub mod profile;
 pub mod salary;
 pub mod templates;
+pub mod trudvsem;
 pub mod tui;
 pub mod workflow;
 

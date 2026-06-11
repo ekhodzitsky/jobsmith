@@ -21,6 +21,14 @@ pub enum JobsmithError {
     #[error("habr career request failed: {0}")]
     HabrRequest(String),
 
+    /// Trudvsem (Работа России) request failed.
+    #[error("trudvsem request failed: {0}")]
+    TrudvsemRequest(String),
+
+    /// GeekJob request failed.
+    #[error("geekjob request failed: {0}")]
+    GeekjobRequest(String),
+
     /// Database operation failed.
     #[error("database error: {0}")]
     Database(#[from] rusqlite::Error),

@@ -10,7 +10,21 @@ use crate::habr::HabrClient;
 use crate::hh::client::HhClient;
 use crate::hh::models::{strip_html, Vacancy, VacancySearchQuery};
 use crate::profile::store::ProfileStore;
+use crate::trudvsem::TrudvsemClient;
 use crate::tui;
+
+/// Sources without HH-style structured filters need a text query.
+fn require_query<'a>(query: &'a VacancySearchQuery, source: &str) -> Result<&'a str> {
+    query
+        .text
+        .as_deref()
+        .filter(|t| !t.is_empty())
+        .ok_or_else(|| {
+            JobsmithError::Config(format!(
+                "{source} search requires a query, e.g. `jobsmith search rust --source {source}`"
+            ))
+        })
+}
 
 /// Run the search command.
 #[instrument(skip(query))]
@@ -33,16 +47,18 @@ pub async fn run(
             (response.items, header)
         }
         VacancySource::Habr => {
-            let text = query.text.as_deref().unwrap_or_default();
-            if text.is_empty() {
-                return Err(JobsmithError::Config(
-                    "habr search requires a query, e.g. `jobsmith search rust --source habr`"
-                        .to_string(),
-                ));
-            }
+            let text = require_query(&query, "habr")?;
             info!("searching career.habr.com");
             let items = HabrClient::new()?.search(text).await?;
             let header = format!("\nFound {} vacancies on Habr Career:\n", items.len());
+            (items, header)
+        }
+        VacancySource::Trudvsem => {
+            let text = require_query(&query, "trudvsem")?;
+            info!("searching trudvsem.ru");
+            let limit = u32::try_from(query.per_page.max(1)).unwrap_or(20);
+            let items = TrudvsemClient::new()?.search(text, limit).await?;
+            let header = format!("\nFound {} vacancies on Работа России:\n", items.len());
             (items, header)
         }
     };
