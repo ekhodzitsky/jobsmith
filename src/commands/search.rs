@@ -6,6 +6,7 @@ use tracing::{info, instrument};
 
 use crate::cli::VacancySource;
 use crate::error::{JobsmithError, Result};
+use crate::geekjob::GeekjobClient;
 use crate::habr::HabrClient;
 use crate::hh::client::HhClient;
 use crate::hh::models::{strip_html, Vacancy, VacancySearchQuery};
@@ -59,6 +60,13 @@ pub async fn run(
             let limit = u32::try_from(query.per_page.max(1)).unwrap_or(20);
             let items = TrudvsemClient::new()?.search(text, limit).await?;
             let header = format!("\nFound {} vacancies on Работа России:\n", items.len());
+            (items, header)
+        }
+        VacancySource::Geekjob => {
+            let text = require_query(&query, "geekjob")?;
+            info!("searching geekjob.ru");
+            let items = GeekjobClient::new()?.search(text).await?;
+            let header = format!("\nFound {} vacancies on GeekJob:\n", items.len());
             (items, header)
         }
     };

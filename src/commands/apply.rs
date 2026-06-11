@@ -38,6 +38,7 @@ pub async fn run(
             let (cc, vid) = crate::trudvsem::api::extract_card_ids(vacancy_id)?;
             format!("{cc}/{vid}")
         }
+        VacancySource::Geekjob => crate::geekjob::listing::extract_hex_id(vacancy_id)?,
     };
     info!(vacancy_id = %id, ?source, "fetching vacancy");
 
@@ -76,6 +77,7 @@ async fn fetch_vacancy(source: VacancySource, id: &str) -> Result<VacancyDetail>
                 .get_vacancy(&cc, &vid)
                 .await
         }
+        VacancySource::Geekjob => crate::geekjob::GeekjobClient::new()?.get_vacancy(id).await,
     }
 }
 

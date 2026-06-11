@@ -14,6 +14,8 @@ pub enum VacancySource {
     Habr,
     /// Работа России (`trudvsem.ru`) — open government JSON API, no token.
     Trudvsem,
+    /// GeekJob (`geekjob.ru`) — public listing + JSON-LD, no token.
+    Geekjob,
 }
 
 impl VacancySource {
@@ -26,6 +28,8 @@ impl VacancySource {
             Self::Habr
         } else if input.contains("trudvsem.ru") {
             Self::Trudvsem
+        } else if input.contains("geekjob.ru") {
+            Self::Geekjob
         } else {
             Self::Hh
         }
@@ -189,6 +193,14 @@ mod tests {
                 "https://trudvsem.ru/vacancy/card/7226c750-02f1-11eb/58c3f1e4-5b4a-11f1"
             ),
             VacancySource::Trudvsem
+        );
+    }
+
+    #[test]
+    fn detect_recognizes_geekjob_url() {
+        assert_eq!(
+            VacancySource::detect("https://geekjob.ru/vacancy/68396cc09c191336e60ee914"),
+            VacancySource::Geekjob
         );
     }
 

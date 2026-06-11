@@ -7,7 +7,7 @@
 use scraper::{Html, Selector};
 use serde_json::Value;
 
-use crate::hh::models::{Area, Employer};
+use crate::hh::models::{Area, Employer, Salary};
 
 /// Find the `JobPosting` object among the page's JSON-LD blocks.
 ///
@@ -63,6 +63,40 @@ pub(crate) fn employer_from(posting: &Value) -> Option<Employer> {
         name,
         url,
         ..Default::default()
+    })
+}
+
+/// `baseSalary` (schema.org `MonetaryAmount`) → [`Salary`].
+///
+/// Bounds may live in `value.{minValue,maxValue}` (QuantitativeValue),
+/// be a single `value` number, or sit on the amount itself.
+pub(crate) fn salary_from(posting: &Value) -> Option<Salary> {
+    let amount = posting.get("baseSalary")?;
+    let value = amount.get("value");
+    let bound = |key: &str| -> Option<i32> {
+        let node = value.and_then(|v| v.get(key)).or_else(|| amount.get(key))?;
+        let n = node.as_i64().or_else(|| node.as_f64().map(|f| f as i64))?;
+        i32::try_from(n).ok().filter(|n| *n > 0)
+    };
+    let single = || -> Option<i32> {
+        let n = value?.as_i64()?;
+        i32::try_from(n).ok().filter(|n| *n > 0)
+    };
+    let from = bound("minValue").or_else(single);
+    let to = bound("maxValue");
+    if from.is_none() && to.is_none() {
+        return None;
+    }
+    let currency = amount
+        .get("currency")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .filter(|c| !c.is_empty());
+    Some(Salary {
+        from,
+        to,
+        currency,
+        gross: None,
     })
 }
 
