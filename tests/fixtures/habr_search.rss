@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Вакансии — Хабр Карьера</title>
+    <description>Вакансии — Хабр Карьера</description>
+    <link>https://career.habr.com/vacancies/rss</link>
+    <language>ru</language>
+    <item>
+      <title>Требуется «Разработчик Rust» (Москва)</title>
+      <description>Компания «Bell Integrator» ищет хорошего специалиста на вакансию «Разработчик Rust». Москва (Россия). Полный рабочий день. Можно удалённо. Требуемые навыки: #senior, #Rust, #PostgreSQL, #Linux, #SQL, #CI/CD, #Docker, #ApacheKafka.</description>
+      <author>Bell Integrator</author>
+      <pubDate>Wed, 10 Jun 2026 16:46:20 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166679</link>
+      <guid>1000166679</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/431/936/411/logo/medium_f1357fbfec55a045f655cade248fa3da.jpg</image>
+    </item>
+    <item>
+      <title>Требуется «Rust-разработчик поискового движка» (Москва)</title>
+      <description>Компания «Крибрум» ищет хорошего специалиста на вакансию «Rust-разработчик поискового движка». Москва (Россия). Полный рабочий день. Требуемые навыки: #senior, #Rust.</description>
+      <author>Крибрум</author>
+      <pubDate>Fri, 29 May 2026 15:42:41 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000163527</link>
+      <guid>1000163527</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/006/666/1/logo/medium_03ee7fcc3c5b1a6a036383a7f75c609d.png</image>
+    </item>
+    <item>
+      <title>Требуется «GameDev Developer» (Москва)</title>
+      <description>Компания «Ninsar» ищет хорошего специалиста на вакансию «GameDev Developer». Москва (Россия), Санкт-Петербург (Россия). Полный рабочий день. Можно удалённо. Требуемые навыки: #senior, #Rust, #PostgreSQL, #SQL, #Docker, #Linux, #CI/CD, #GitHub, #GitHubActions, #Redis, #Prometheus.</description>
+      <author>Ninsar</author>
+      <pubDate>Fri, 29 May 2026 18:29:13 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166738</link>
+      <guid>1000166738</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/009/843/0/logo/medium_12566e5510dd9ab905d684bf57f7eb33.png</image>
+    </item>
+    <item>
+      <title>Требуется «Fullstack разработчик Middle+ / .NET + React / Трейдинг тематика» (Алматы)</title>
+      <description>Компания «LCap» ищет хорошего специалиста на вакансию «Fullstack разработчик Middle+ / .NET + React / Трейдинг тематика». Алматы (Казахстан), Астана (Нур-Султан) (Казахстан), Актобе (Казахстан). Полный рабочий день. Можно удалённо. Требуемые навыки: #middle, #C#, #.NETCore, #PostgreSQL, #Redis, #NATS, #Docker, #CI/CD, #React.</description>
+      <author>LCap</author>
+      <pubDate>Tue, 19 May 2026 13:16:31 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000165661</link>
+      <guid>1000165661</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/009/514/3/logo/medium_ffea0b2717ce74014cff3c9dc57d9408.png</image>
+    </item>
+    <item>
+      <title>Требуется «Системный аналитик» (Москва)</title>
+      <description>Компания «Bell Integrator» ищет хорошего специалиста на вакансию «Системный аналитик». Москва (Россия). Полный рабочий день. Можно удалённо. Требуемые навыки: #senior, #SQL, #REST, #UML, #Системныйанализ, #ERдиаграммы.</description>
+      <author>Bell Integrator</author>
+      <pubDate>Wed, 10 Jun 2026 16:46:20 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166665</link>
+      <guid>1000166665</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/431/936/411/logo/medium_f1357fbfec55a045f655cade248fa3da.jpg</image>
+    </item>
+    <item>
+      <title>Требуется «Project Manager (B2B)»</title>
+      <description>Компания «Лаборатория Касперского» ищет хорошего специалиста на вакансию «Project Manager (B2B)». Можно удалённо. Требуемые навыки: #Управлениепроектами.</description>
+      <author>Лаборатория Касперского</author>
+      <pubDate>Thu, 04 Jun 2026 10:11:52 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000164837</link>
+      <guid>1000164837</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/004/708/5/logo/medium_ef9465d4f5510e4e1d8793641d8c4203.png</image>
+    </item>
+    <item>
+      <title>Требуется «Fullstack аналитик» (Москва)</title>
+      <description>Компания «Bell Integrator» ищет хорошего специалиста на вакансию «Fullstack аналитик». Москва (Россия). Полный рабочий день. Можно удалённо. Требуемые навыки: #senior, #SQL, #REST, #UML, #BPMN, #ERдиаграммы.</description>
+      <author>Bell Integrator</author>
+      <pubDate>Wed, 10 Jun 2026 14:34:16 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166654</link>
+      <guid>1000166654</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/431/936/411/logo/medium_f1357fbfec55a045f655cade248fa3da.jpg</image>
+    </item>
+    <item>
+      <title>Требуется «Dev Team Lead/ Tech Lead/ Технический директор» (от 500 000 до 1 000 000 ₽)</title>
+      <description>Компания «UANT Limited» ищет хорошего специалиста на вакансию «Dev Team Lead/ Tech Lead/ Технический директор». От 500 000 ₽ до 1 000 000 ₽. Полный рабочий день. Можно удалённо. Требуемые навыки: #lead, #Python, #TypeScript, #Node.js, #Next.js, #React, #PostgreSQL, #Kubernetes, #Docker, #MongoDB, #GraphQL.</description>
+      <author>UANT Limited</author>
+      <pubDate>Tue, 02 Jun 2026 12:00:02 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166314</link>
+      <guid>1000166314</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/009/822/6/logo/medium_254d5308df0cbd551b34c4d17d61d21c.png</image>
+    </item>
+    <item>
+      <title>Требуется «Middle+/Senior Backend разработчик (TypeScript / Node.js) — финтех-платформа» (от 2 000 до 4 000 $)</title>
+      <description>Компания «Crypto Story Bank» ищет хорошего специалиста на вакансию «Middle+/Senior Backend разработчик (TypeScript / Node.js) — финтех-платформа». От 2 000 $ до 4 000 $. Полный рабочий день. Можно удалённо. Требуемые навыки: #senior, #TypeScript, #PostgreSQL, #CI/CD, #gRPC, #Kubernetes, #RabbitMQ, #Redis, #NestJS, #Микросервиснаяархитектура, #Управлениесобытиями.</description>
+      <author>Crypto Story Bank</author>
+      <pubDate>Tue, 09 Jun 2026 12:32:52 +0300</pubDate>
+      <link>https://career.habr.com/vacancies/1000166604</link>
+      <guid>1000166604</guid>
+      <image>https://habrastorage.org/getpro/moikrug/uploads/company/100/009/671/7/logo/medium_f726e9f8fbff93bf2235d60887604fe4.png</image>
+    </item>
+  </channel>
+</rss>

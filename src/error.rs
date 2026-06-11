@@ -17,6 +17,10 @@ pub enum JobsmithError {
     #[error("hh api returned status {status}: {message}")]
     HhApiStatus { status: u16, message: String },
 
+    /// Habr Career request failed (network error or non-success status).
+    #[error("habr career request failed: {0}")]
+    HabrRequest(String),
+
     /// Database operation failed.
     #[error("database error: {0}")]
     Database(#[from] rusqlite::Error),

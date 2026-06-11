@@ -13,6 +13,7 @@
 pub mod cli;
 pub mod commands;
 pub mod error;
+pub mod habr;
 pub mod hh;
 pub(crate) mod http;
 pub mod profile;

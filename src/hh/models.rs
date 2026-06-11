@@ -29,7 +29,7 @@ pub struct VacanciesResponse {
 }
 
 /// A single vacancy from the HH API.
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct Vacancy {
     pub id: String,
     pub name: String,
@@ -103,7 +103,7 @@ pub struct Salary {
 ///
 /// HH may return partial objects (e.g. hidden/anonymous employers),
 /// so even `id`/`name` are optional.
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct Employer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -209,7 +209,7 @@ pub struct Snippet {
 }
 
 /// Detailed vacancy response (from `/vacancies/{id}`).
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct VacancyDetail {
     #[serde(flatten)]
     pub base: Vacancy,

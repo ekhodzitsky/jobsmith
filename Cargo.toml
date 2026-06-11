@@ -39,8 +39,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "tracing-log"]
 # Date/time
 chrono = { version = "0.4", features = ["serde"] }
 
-# HTML parsing (for HH vacancy descriptions)
+# HTML parsing (HH/Habr vacancy descriptions, Habr JSON-LD extraction)
 scraper = "0.22"
+
+# XML parsing (Habr Career RSS search feed; std has no XML reader and
+# hand-parsing RSS is brittle on CDATA/entities — de-facto standard,
+# pure-Rust, MSRV 1.79)
+quick-xml = "0.40"
 
 # Fuzzy matching / regex
 regex = "1"
