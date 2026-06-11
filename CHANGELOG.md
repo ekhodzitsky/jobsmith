@@ -6,6 +6,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Habr Career as a second vacancy source.** `jobsmith search <query>
+  --source habr` lists vacancies from Habr Career's public RSS feed, and
+  `apply` auto-detects a `career.habr.com` URL and reads the vacancy's
+  schema.org `JobPosting` JSON-LD — both anonymous, no token, no DOM
+  scraping. Useful while hh.ru requires OAuth: the whole search → apply
+  pipeline works end-to-end through Habr. Interactive TUI stays
+  HeadHunter-only for now.
+
 ### Changed
 - **Migrated the AI pipeline from the legacy kimi wire protocol to ACP**
   (Agent Client Protocol), the stdio protocol of Kimi Code CLI 0.14+:
