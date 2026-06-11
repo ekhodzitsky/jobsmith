@@ -16,6 +16,7 @@ pub mod error;
 pub mod habr;
 pub mod hh;
 pub(crate) mod http;
+pub(crate) mod jsonld;
 pub mod profile;
 pub mod salary;
 pub mod templates;
